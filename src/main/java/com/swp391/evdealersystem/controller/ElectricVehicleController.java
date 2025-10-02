@@ -26,7 +26,6 @@ public class ElectricVehicleController {
     }
 
     @GetMapping
-    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     public ResponseEntity<List<ElectricVehicleResponse>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
