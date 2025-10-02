@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    //chua xu li trung email
     private final AuthService authService;
 
     public AuthController(AuthService authService) {

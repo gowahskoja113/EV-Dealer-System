@@ -39,25 +39,17 @@ public class SecurityConfig {
                         // ai cũng gọi được register, login
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // --- chỉ USER được GET ---
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("USER", "ADMIN", "EVMSTAFF")
+                        .requestMatchers(HttpMethod.GET, "api/electric-vehicles").hasAnyRole("USER")
+
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
 
                         // --- ADMIN + EVMSTAFF được phép POST/PUT/DELETE ---
                         .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
                         .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
 
-<<<<<<< HEAD
-                        //Swagger
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
-
-=======
->>>>>>> b241fa07be0aece58c015b477d6f9be49908b8fe
                         // còn lại (nếu có) thì cần xác thực
                         .anyRequest().authenticated()
                 );

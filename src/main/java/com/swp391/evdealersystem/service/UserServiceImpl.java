@@ -7,6 +7,7 @@ import com.swp391.evdealersystem.entity.User;
 import com.swp391.evdealersystem.mapper.UserMapper;
 import com.swp391.evdealersystem.repository.RoleRepository;
 import com.swp391.evdealersystem.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +21,15 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UserServiceImpl(UserRepository userRepository,
                            RoleRepository roleRepository,
-                           UserMapper userMapper) {
+                           UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -36,8 +39,9 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userMapper.toEntity(request);
+        user.setUserId(null); // ép về null để chắc chắn là insert
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // gán role
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new RuntimeException("Role not found"));
@@ -71,7 +75,10 @@ public class UserServiceImpl implements UserService {
         if (request.getPhoneNumber() != null) existing.setPhoneNumber(request.getPhoneNumber());
         if (request.getEmail() != null) existing.setEmail(request.getEmail());
         if (request.getAddress() != null) existing.setAddress(request.getAddress());
-        if (request.getPassword() != null) existing.setPassword(request.getPassword());
+
+        if (request.getPassword() != null) {
+            existing.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
