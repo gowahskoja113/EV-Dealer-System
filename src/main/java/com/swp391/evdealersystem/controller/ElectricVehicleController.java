@@ -21,27 +21,32 @@ public class ElectricVehicleController {
     }
 
     @GetMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
     public ResponseEntity<ElectricVehicleResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @GetMapping
+    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
     public ResponseEntity<List<ElectricVehicleResponse>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
 
     @PostMapping
+    @Secured({"ROLE_ADMIN"})
     public ResponseEntity<ElectricVehicleResponse> create(@RequestBody ElectricVehicleRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
 
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     public ResponseEntity<ElectricVehicleResponse> update(@PathVariable Long id,
                                                           @RequestBody ElectricVehicleRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

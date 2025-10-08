@@ -44,7 +44,6 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
         ElectricVehicle electricVehicle = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ElectricVehicle not found with id " + id));
 
-        electricVehicle.setModel(request.getModel());
         electricVehicle.setCost(request.getCost());
         electricVehicle.setBrand(request.getBrand());
         electricVehicle.setPrice(request.getPrice());

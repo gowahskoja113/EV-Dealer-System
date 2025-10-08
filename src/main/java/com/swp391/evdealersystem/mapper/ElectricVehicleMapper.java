@@ -8,7 +8,6 @@ public class ElectricVehicleMapper {
 
     public static ElectricVehicle toEntity(ElectricVehicleRequest request) {
         ElectricVehicle electricVehicle = new ElectricVehicle();
-        electricVehicle.setModel(request.getModel());
         electricVehicle.setCost(request.getCost());
         electricVehicle.setBrand(request.getBrand());
         electricVehicle.setPrice(request.getPrice());
@@ -19,7 +18,6 @@ public class ElectricVehicleMapper {
     public static ElectricVehicleResponse toDto(ElectricVehicle electricVehicle) {
         ElectricVehicleResponse dto = new ElectricVehicleResponse();
         dto.setVehicleId(electricVehicle.getVehicleId());
-        dto.setModel(electricVehicle.getModel());
         dto.setCost(electricVehicle.getCost());
         dto.setBrand(electricVehicle.getBrand());
         dto.setPrice(electricVehicle.getPrice());

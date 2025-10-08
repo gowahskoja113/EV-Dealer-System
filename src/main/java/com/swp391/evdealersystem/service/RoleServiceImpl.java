@@ -1,11 +1,10 @@
-package com.swp391.evdealersystem.service.impl;
+package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.RoleRequest;
 import com.swp391.evdealersystem.dto.response.RoleResponse;
 import com.swp391.evdealersystem.entity.Role;
 import com.swp391.evdealersystem.mapper.RoleMapper;
 import com.swp391.evdealersystem.repository.RoleRepository;
-import com.swp391.evdealersystem.service.RoleService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
