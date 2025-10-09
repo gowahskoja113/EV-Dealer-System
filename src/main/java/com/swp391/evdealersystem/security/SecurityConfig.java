@@ -47,7 +47,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
 
-
                         //Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -55,7 +54,6 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-
 
                         // còn lại (nếu có) thì cần xác thực
                         .anyRequest().authenticated()
