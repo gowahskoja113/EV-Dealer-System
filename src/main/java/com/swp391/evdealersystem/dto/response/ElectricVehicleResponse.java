@@ -9,9 +9,12 @@ import java.math.BigDecimal;
 @Setter
 public class ElectricVehicleResponse {
     private Long vehicleId;
-    private String model;
-    private long cost;
     private String brand;
+    private long cost;
     private long price;
     private int batteryCapacity;
+
+    // Có thể trả thêm thông tin model nếu cần hiển thị
+    private Long modelId;
+    private String modelName;
 }

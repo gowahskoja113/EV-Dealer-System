@@ -16,7 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 @Configuration
-@EnableMethodSecurity
+@EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
     private final JwtService jwtService;
     private final JpaUserDetailsService userDetailsService;
@@ -39,18 +39,14 @@ public class SecurityConfig {
                         // ai cũng gọi được register, login
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "api/electric-vehicles").hasAnyRole("USER")
+                        //Swagger
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
 
-                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-
-                        // --- ADMIN + EVMSTAFF được phép POST/PUT/DELETE ---
-                        .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-
-                        // còn lại (nếu có) thì cần xác thực
                         .anyRequest().authenticated()
                 );
 
