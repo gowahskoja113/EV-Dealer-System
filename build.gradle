@@ -19,11 +19,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
-<<<<<<< HEAD
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-=======
->>>>>>> b241fa07be0aece58c015b477d6f9be49908b8fe
 
     // SQL Server JDBC driver (hỗ trợ JDK 21)
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
@@ -45,13 +42,11 @@ dependencies {
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-<<<<<<< HEAD
+
 
     //Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
-=======
->>>>>>> b241fa07be0aece58c015b477d6f9be49908b8fe
 }
 
 tasks.named('test') {
