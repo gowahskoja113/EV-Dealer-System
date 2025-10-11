@@ -29,7 +29,7 @@ public class JpaUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                List.of(authority)  // chỉ có 1 role
+                List.of(authority)
         );
     }
 
