@@ -39,14 +39,16 @@ public class SecurityConfig {
                         // ai cũng gọi được register, login
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // --- chỉ USER được GET ---
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("USER", "ADMIN", "EVMSTAFF")
+                        .requestMatchers(HttpMethod.GET, "api/electric-vehicles").hasAnyRole("USER")
+
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
 
                         // --- ADMIN + EVMSTAFF được phép POST/PUT/DELETE ---
                         .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
                         .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-
                         //Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
