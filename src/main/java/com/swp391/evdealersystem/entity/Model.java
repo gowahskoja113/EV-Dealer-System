@@ -10,18 +10,16 @@ import java.util.List;
 @Getter
 @Setter
 public class Model {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "model_id")
     private Long modelId;
 
-    // 👇 Mã model (code hiển thị)
     @Column(name = "model_code", length = 50, unique = true, nullable = false)
     private String modelCode;
 
-    @Column(length = 100, nullable = false)
-    private String name;
+     @Column(length = 100, nullable = false)
+     private String brand;
 
     @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ElectricVehicle> vehicles;

@@ -9,6 +9,7 @@ public interface ElectricVehicleService {
     ElectricVehicleResponse create(ElectricVehicleRequest request);
     ElectricVehicleResponse getById(Long id);
     List<ElectricVehicleResponse> getAll();
-    ElectricVehicleResponse update(Long id, ElectricVehicleRequest request);
+    List<ElectricVehicleResponse> getByModelId(Long modelId);
+    ElectricVehicleResponse update(Long vehicleId, ElectricVehicleRequest request);
     void delete(Long id);
 }

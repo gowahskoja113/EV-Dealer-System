@@ -27,7 +27,6 @@ public class JwtService {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        // thêm role vào claim
         String role = userDetails.getAuthorities()
                 .stream()
                 .findFirst()
