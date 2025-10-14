@@ -3,57 +3,72 @@ package com.swp391.evdealersystem.service;
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
+import com.swp391.evdealersystem.entity.Model;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
+import com.swp391.evdealersystem.repository.ModelRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ElectricVehicleServiceImpl implements ElectricVehicleService {
 
-    private final ElectricVehicleRepository repository;
+    private final ElectricVehicleRepository evRepo;
+    private final ModelRepository modelRepo;
+    private final ElectricVehicleMapper electricVehicleMapper;
 
-    public ElectricVehicleServiceImpl(ElectricVehicleRepository repository) {
-        this.repository = repository;
+    @Override
+    @Transactional
+    public ElectricVehicleResponse create(ElectricVehicleRequest req) {
+        Model model = modelRepo.findByModelCode(req.getModelCode())
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelCode()));
+
+        ElectricVehicle ev = electricVehicleMapper.toEntity(req, model);
+        ev = evRepo.save(ev);
+        return electricVehicleMapper.toResponse(ev);
     }
 
     @Override
-    public ElectricVehicleResponse create(ElectricVehicleRequest request) {
-        ElectricVehicle ev = ElectricVehicleMapper.toEntity(request);
-        return ElectricVehicleMapper.toDto(repository.save(ev));
+    public ElectricVehicleResponse getById(Long vehicleId) {
+        ElectricVehicle ev = evRepo.findById(vehicleId)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
+        return electricVehicleMapper.toResponse(ev);
     }
 
     @Override
-    public ElectricVehicleResponse getById(Long id) {
-        ElectricVehicle ev = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ElectricVehicle not found with id " + id));
-        return ElectricVehicleMapper.toDto(ev);
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public List<ElectricVehicleResponse> getAll() {
-        return repository.findAll().stream()
-                .map(ElectricVehicleMapper::toDto)
-                .collect(Collectors.toList());
+        return evRepo.findAll().stream().map(electricVehicleMapper::toResponse).toList();
     }
 
     @Override
+    public List<ElectricVehicleResponse> getByModelId(Long modelId) {
+        Model model = modelRepo.findById(modelId)
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + modelId));
+        return evRepo.findByModel(model).stream().map(electricVehicleMapper::toResponse).toList();
+    }
+
+    @Override
+    @Transactional
     public ElectricVehicleResponse update(Long id, ElectricVehicleRequest request) {
-        ElectricVehicle electricVehicle = repository.findById(id)
+        ElectricVehicle electricVehicle = evRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("ElectricVehicle not found with id " + id));
 
-        electricVehicle.setCost(request.getCost());
-        electricVehicle.setBrand(request.getBrand());
-        electricVehicle.setPrice(request.getPrice());
-        electricVehicle.setBatteryCapacity(request.getBatteryCapacity());
-
-        return ElectricVehicleMapper.toDto(repository.save(electricVehicle));
+        // Không đổi model trong update
+        electricVehicleMapper.updateEntity(electricVehicle, request);
+        electricVehicle = evRepo.save(electricVehicle);
+        return electricVehicleMapper.toResponse(electricVehicle);
     }
 
     @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+    @Transactional
+    public void delete(Long vehicleId) {
+        ElectricVehicle ev = evRepo.findById(vehicleId)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
+        evRepo.delete(ev);
     }
 }

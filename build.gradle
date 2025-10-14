@@ -24,6 +24,10 @@ dependencies {
     // SQL Server JDBC driver (hỗ trợ JDK 21)
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
 
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
     // Lombok
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

@@ -3,6 +3,7 @@ package com.swp391.evdealersystem.controller;
 import com.swp391.evdealersystem.dto.request.ModelRequest;
 import com.swp391.evdealersystem.dto.response.ModelResponse;
 import com.swp391.evdealersystem.service.ModelService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/models")
@@ -20,7 +23,7 @@ public class ModelController {
 
     @PostMapping
     @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<ModelResponse> create(@RequestBody ModelRequest req) {
+    public ResponseEntity<ModelResponse> create(@Valid @RequestBody ModelRequest req) {
         return ResponseEntity.ok(modelService.create(req));
     }
 
@@ -38,7 +41,7 @@ public class ModelController {
 
     @GetMapping
     @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    public ResponseEntity<Page<ModelResponse>> list(
+    public ResponseEntity<List<ModelResponse>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -49,7 +52,7 @@ public class ModelController {
     @PutMapping("/{id}")
     @Secured({"ROLE_ADMIN"})
     public ResponseEntity<ModelResponse> update(@PathVariable Long id,
-                                                @RequestBody ModelRequest req) {
+                                                @Valid @RequestBody ModelRequest req) {
         return ResponseEntity.ok(modelService.update(id, req));
     }
 

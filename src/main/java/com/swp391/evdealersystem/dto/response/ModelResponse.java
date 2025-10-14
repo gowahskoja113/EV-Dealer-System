@@ -1,24 +1,14 @@
 package com.swp391.evdealersystem.dto.response;
 
-import lombok.Getter;
-import lombok.Setter;
-import java.util.List;
-
-@Getter
-@Setter
 public class ModelResponse {
     private Long modelId;
     private String modelCode;
-    private String name;
+    private String brand;
 
-    private List<ElectricVehicleSummary> vehicles;
-
-    @Getter
-    @Setter
-    public static class ElectricVehicleSummary {
-        private Long vehicleId;
-        private String brand;
-        private int batteryCapacity;
-        private long price;
-    }
+    public Long getModelId() { return modelId; }
+    public void setModelId(Long modelId) { this.modelId = modelId; }
+    public String getModelCode() { return modelCode; }
+    public void setModelCode(String modelCode) { this.modelCode = modelCode; }
+    public String getBrand() { return brand; }
+    public void setBrand(String brand) { this.brand = brand; }
 }
