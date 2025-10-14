@@ -11,16 +11,16 @@ public class ElectricVehicle {
     @Column(name = "vehicle_id")
     private Long vehicleId;
 
-    @Column(precision = 15, scale = 2, nullable = false)
+    @Column(nullable = false)
     private long cost;
 
-    @Column(precision = 15, scale = 2, nullable = false)
+    @Column(nullable = false)
     private long price;
 
     @Column(name = "battery_capacity", nullable = false)
     private Integer batteryCapacity;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "model_id", nullable = false)
+    @JoinColumn(name = "model_id", referencedColumnName = "model_id", nullable = false)
     private Model model;
 }

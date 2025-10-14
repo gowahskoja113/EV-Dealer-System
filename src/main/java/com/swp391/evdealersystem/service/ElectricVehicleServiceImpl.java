@@ -7,9 +7,9 @@ import com.swp391.evdealersystem.entity.Model;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -40,6 +40,7 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ElectricVehicleResponse> getAll() {
         return evRepo.findAll().stream().map(electricVehicleMapper::toResponse).toList();
     }
