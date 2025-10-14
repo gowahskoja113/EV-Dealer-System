@@ -4,21 +4,24 @@ import com.swp391.evdealersystem.dto.request.CustomerRequest;
 import com.swp391.evdealersystem.dto.response.CustomerResponse;
 import com.swp391.evdealersystem.entity.Customer;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
+import com.swp391.evdealersystem.mapper.CustomerMapper;
 import com.swp391.evdealersystem.repository.CustomerRepository;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final ElectricVehicleRepository vehicleRepository;
+    private final CustomerMapper customerMapper;
 
     @Override
     public CustomerResponse createCustomer(CustomerRequest request) {
@@ -29,15 +32,9 @@ public class CustomerServiceImpl implements CustomerService {
             throw new RuntimeException("Phone number already exists: " + request.getPhoneNumber());
         }
 
-        Customer customer = new Customer();
-        customer.setVehicle(vehicle);
-        customer.setName(request.getName());
-        customer.setPhoneNumber(request.getPhoneNumber());
-        customer.setInterestVehicle(request.getInterestVehicle());
-        customer.setStatus(request.getStatus());
-
+        Customer customer = customerMapper.toEntity(request, vehicle);
         Customer saved = customerRepository.save(customer);
-        return mapToResponse(saved);
+        return customerMapper.toResponse(saved);
     }
 
     @Override
@@ -55,27 +52,27 @@ public class CustomerServiceImpl implements CustomerService {
         existing.setStatus(request.getStatus());
 
         Customer updated = customerRepository.save(existing);
-        return mapToResponse(updated);
+        return customerMapper.toResponse(updated);
     }
 
     @Override
     public CustomerResponse getCustomerById(Long id) {
-        Customer customer = customerRepository.findById(id)
+        return customerRepository.findById(id)
+                .map(customerMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + id));
-        return mapToResponse(customer);
     }
 
     @Override
     public CustomerResponse getCustomerByPhone(String phoneNumber) {
-        Customer customer = customerRepository.findByPhoneNumber(phoneNumber)
+        return customerRepository.findByPhoneNumber(phoneNumber)
+                .map(customerMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Customer not found with phone: " + phoneNumber));
-        return mapToResponse(customer);
     }
 
     @Override
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
-                .map(this::mapToResponse)
+                .map(customerMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -85,20 +82,5 @@ public class CustomerServiceImpl implements CustomerService {
             throw new RuntimeException("Customer not found with ID: " + id);
         }
         customerRepository.deleteById(id);
-    }
-
-    // -----------------------
-    // Helper mapper
-    // -----------------------
-    private CustomerResponse mapToResponse(Customer entity) {
-        return CustomerResponse.builder()
-                .customerId(entity.getCustomerId())
-                .vehicleId(entity.getVehicle().getVehicleId())
-                .vehicleModel(entity.getVehicle().getModel())
-                .name(entity.getName())
-                .phoneNumber(entity.getPhoneNumber())
-                .interestVehicle(entity.getInterestVehicle())
-                .status(entity.getStatus())
-                .build();
     }
 }

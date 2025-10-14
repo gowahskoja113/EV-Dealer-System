@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ElectricVehicleRepository extends JpaRepository <ElectricVehicle, Long> {
     @EntityGraph(attributePaths = "model")
@@ -13,6 +14,9 @@ public interface ElectricVehicleRepository extends JpaRepository <ElectricVehicl
 
     @EntityGraph(attributePaths = "model")
     List<ElectricVehicle> findAll();
+
+    @EntityGraph(attributePaths = "model")
+    Optional<ElectricVehicle> findById(Long id);
 
     long countByModel(Model model);
 }
