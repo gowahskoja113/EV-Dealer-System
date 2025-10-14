@@ -1,14 +1,21 @@
 package com.swp391.evdealersystem.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity @Table(name = "electric_vehicle")
-@Getter @Setter
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "electric_vehicle")
+@Getter
+@Setter
 public class ElectricVehicle {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
     @Column(name = "vehicle_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long vehicleId;
 
     @Column(nullable = false)
