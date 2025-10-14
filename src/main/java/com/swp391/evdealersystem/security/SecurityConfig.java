@@ -38,7 +38,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // ai cũng gọi được register, login
                         .requestMatchers("/api/auth/**").permitAll()
-
                         //Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
