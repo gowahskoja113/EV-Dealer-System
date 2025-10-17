@@ -50,7 +50,6 @@ public class AuthService {
 
         User user = authMapper.toEntity(req);
 
-        // Nếu không truyền roleId thì mặc định = 1 (USER)
         Integer roleId = (req.getRoleId() != null) ? req.getRoleId() : 1;
 
         Role role = roleRepository.findById(roleId)
@@ -58,7 +57,6 @@ public class AuthService {
 
         user.setRole(role);
 
-        // mã hóa mật khẩu
         user.setPassword(passwordEncoder.encode(req.getPassword()));
 
         userRepository.save(user);
@@ -77,10 +75,8 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
         );
 
-        // load UserDetails từ DB
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getEmail());
 
-        // generate token dựa vào UserDetails
         String token = jwtService.generateToken(userDetails);
 
         return new AuthResponse(token, req.getEmail());
