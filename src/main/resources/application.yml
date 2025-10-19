@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=evdealer1;encrypt=false
+    username: sa
+    password: 123456789
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.SQLServerDialect
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
+
+# Cấu hình VNPAY
+vnpay:
+  tmnCode: YOUR_TMN_CODE
+  hashSecret: YOUR_HASH_SECRET
+  payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  returnUrl: https://<public-domain>/api/payments/vnpay/return
+  ipnUrl: https://<public-domain>/api/payments/vnpay/ipn
+  version: 2.1.0
+  command: pay
+  locale: vn
+  currCode: VND
+
+server:
+  port: 8080
