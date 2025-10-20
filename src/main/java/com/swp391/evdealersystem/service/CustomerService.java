@@ -18,5 +18,9 @@ public interface CustomerService {
     List<CustomerResponse> getAllCustomers();
 
     void deleteCustomer(Long id);
+
+    CustomerResponse assignSales(Long customerId, Long userId);
+
+    CustomerResponse unassignSales(Long customerId);
 }
 

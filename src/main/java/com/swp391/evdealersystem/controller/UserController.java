@@ -34,20 +34,20 @@ public class UserController {
 
     @GetMapping("/{id}")
     @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<UserResponse> getById(@PathVariable Integer id) {
+    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getById(id));
     }
 
     @PutMapping("/{id}")
     @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id,
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
                                                    @Valid @RequestBody UserRequest req) {
         return ResponseEntity.ok(userService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
