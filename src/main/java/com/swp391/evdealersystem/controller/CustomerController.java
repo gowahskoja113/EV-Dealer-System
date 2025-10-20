@@ -55,5 +55,15 @@ public class CustomerController {
     public void delete(@PathVariable Long id) {
         customerService.deleteCustomer(id);
     }
+
+    @PatchMapping("/{id}/assign-sales/{userId}")
+    public CustomerResponse assignSales(@PathVariable Long id, @PathVariable Long userId) {
+        return customerService.assignSales(id, userId);
+    }
+
+    @PatchMapping("/{id}/unassign-sales")
+    public CustomerResponse unassignSales(@PathVariable Long id) {
+        return customerService.unassignSales(id);
+    }
 }
 

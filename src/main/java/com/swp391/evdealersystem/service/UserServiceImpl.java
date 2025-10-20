@@ -60,14 +60,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getById(Integer id) {
+    public UserResponse getById(Long id) {
         User u = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return userMapper.toResponse(u);
     }
 
     @Override
-    public UserResponse update(Integer id, UserRequest request) {
+    public UserResponse update(Long id, UserRequest request) {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(Integer id) {
+    public void delete(Long id) {
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("User not found");
         }

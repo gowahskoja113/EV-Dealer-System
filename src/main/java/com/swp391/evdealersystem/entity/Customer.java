@@ -1,5 +1,4 @@
 package com.swp391.evdealersystem.entity;
-
 import com.swp391.evdealersystem.enums.CustomerStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -48,4 +47,12 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private CustomerStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "assigned_sales_id",
+            foreignKey = @ForeignKey(name = "fk_customer_assigned_sales")
+    )
+    private User assignedSales;
+
 }
