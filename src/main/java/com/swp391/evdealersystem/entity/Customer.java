@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @Table(
@@ -25,6 +28,9 @@ public class Customer {
             foreignKey = @ForeignKey(name = "fk_customer_vehicle"))
     private ElectricVehicle vehicle;
 
+    @OneToMany(mappedBy = "customer", orphanRemoval = false)
+    private List<Order> orders = new ArrayList<>();
+
     @NotBlank
     @Size(max = 120)
     @Column(nullable = false, length = 120)
@@ -37,7 +43,7 @@ public class Customer {
 
     @Size(max = 255)
     @Column(name = "interest_vehicle", length = 255)
-    private String interestVehicle;  // mô tả xe quan tâm
+    private String interestVehicle;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)

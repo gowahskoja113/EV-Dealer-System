@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "electric_vehicle")
@@ -38,4 +40,9 @@ public class ElectricVehicle {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_vehicle_warehouse"))
     private Warehouse warehouse;
+
+    @OneToMany(mappedBy = "vehicle", orphanRemoval = false)
+    private List<Order> orders = new ArrayList<>();
+
+
 }

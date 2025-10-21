@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomerMapper {
 
-    // Convert từ request → entity
     public Customer toEntity(CustomerRequest request, ElectricVehicle vehicle) {
         if (request == null || vehicle == null) return null;
 
@@ -29,7 +28,6 @@ public class CustomerMapper {
         String vehicleModelStr = null;
         if (entity.getVehicle() != null && entity.getVehicle().getModel() != null) {
             var m = entity.getVehicle().getModel();
-            // Ví dụ: "VinFast VF8" (brand + modelCode)
             String brand = m.getBrand() != null ? m.getBrand().trim() : "";
             String code  = m.getModelCode() != null ? m.getModelCode().trim() : "";
             vehicleModelStr = (brand + " " + code).trim();
