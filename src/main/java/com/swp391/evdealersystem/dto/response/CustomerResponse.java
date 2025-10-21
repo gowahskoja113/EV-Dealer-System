@@ -17,4 +17,7 @@ public class CustomerResponse {
     private String phoneNumber;
     private String interestVehicle;
     private CustomerStatus status;
+    private Long assignedSalesId;
+    private String assignedSalesName;
+
 }

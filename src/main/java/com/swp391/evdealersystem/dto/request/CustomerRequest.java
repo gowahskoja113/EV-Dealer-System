@@ -28,4 +28,7 @@ public class CustomerRequest {
 
     @NotNull(message = "Status is required")
     private CustomerStatus status;
+
+    @Positive(message = "Assigned sales ID must be positive")
+    private Long assignedSalesId;
 }
