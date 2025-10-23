@@ -60,7 +60,6 @@ public class ModelServiceImpl implements ModelService {
         Model model = modelRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Model not found: " + id));
 
-        // update model code
         if (req != null && req.getModelCode() != null) {
             String newCode = req.getModelCode().trim();
             if (!newCode.isEmpty() && !newCode.equals(model.getModelCode())
@@ -69,9 +68,14 @@ public class ModelServiceImpl implements ModelService {
             }
         }
 
-        //update brand
         if (req != null && req.getBrand() != null) {
             model.setBrand(req.getBrand());
+        }
+        if (req != null && req.getColor() != null) {
+            model.setColor(req.getColor());
+        }
+        if (req != null && req.getProductionYear() != null) {
+            model.setProductionYear(req.getProductionYear());
         }
         return mapper.toResponse(model);
     }
