@@ -11,5 +11,7 @@ public class WarehouseStockResponse {
     private Long modelId;
     private String modelCode;
     private String brand;
+    private String color;
+    private Integer productionYear;
     private Integer quantity;
 }

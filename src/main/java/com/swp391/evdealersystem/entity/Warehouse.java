@@ -21,6 +21,9 @@ public class Warehouse {
     @Column(name = "warehouse_location", nullable = false, length = 255)
     private String warehouseLocation;
 
+    @Column(name = "warehouse_name", nullable = false, length = 255)
+    private String warehouseName;
+
     @Column(name = "vehicle_quantity", nullable = false)
     private Integer vehicleQuantity = 0;
 

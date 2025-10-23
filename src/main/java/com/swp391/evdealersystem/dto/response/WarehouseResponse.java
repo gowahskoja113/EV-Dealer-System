@@ -13,5 +13,6 @@ public class WarehouseResponse {
     private Long warehouseId;
     private String warehouseLocation;
     private Integer vehicleQuantity;
+    private String warehouseName;
     private List<WarehouseStockResponse> items;
 }

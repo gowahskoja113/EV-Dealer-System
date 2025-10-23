@@ -16,11 +16,14 @@ public class WarehouseMapper {
         Warehouse w = new Warehouse();
         w.setWarehouseLocation(req.getWarehouseLocation());
         w.setVehicleQuantity(0);
+        w.setWarehouseName(req.getWarehouseName());
         return w;
     }
 
     public void updateEntity(Warehouse w, WarehouseRequest req) {
+
         w.setWarehouseLocation(req.getWarehouseLocation());
+        w.setWarehouseName(req.getWarehouseName());
     }
 
     public WarehouseResponse toResponse(Warehouse w) {
@@ -35,6 +38,7 @@ public class WarehouseMapper {
         return WarehouseResponse.builder()
                 .warehouseId(w.getWarehouseId())
                 .warehouseLocation(w.getWarehouseLocation())
+                .warehouseName(w.getWarehouseName())
                 .vehicleQuantity(total)
                 .items(items)
                 .build();
@@ -44,6 +48,8 @@ public class WarehouseMapper {
         return WarehouseStockResponse.builder()
                 .modelId(s.getModel().getModelId())
                 .modelCode(s.getModel().getModelCode())
+                .color(s.getModel().getColor())
+                .productionYear(s.getModel().getProductionYear())
                 .brand(s.getModel().getBrand())
                 .quantity(s.getQuantity())
                 .build();
