@@ -36,6 +36,8 @@ public class ElectricVehicleMapper {
             r.setModelId(ev.getModel().getModelId());
             r.setModelCode(ev.getModel().getModelCode());
             r.setBrand(ev.getModel().getBrand());
+            r.setColor(ev.getModel().getColor());
+            r.setProductionYear(ev.getModel().getProductionYear());
         }
         return r;
     }

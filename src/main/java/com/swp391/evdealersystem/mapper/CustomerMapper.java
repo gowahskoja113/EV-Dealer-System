@@ -45,9 +45,8 @@ public class CustomerMapper {
         String vehicleModelStr = null;
         if (entity.getVehicle() != null && entity.getVehicle().getModel() != null) {
             var m = entity.getVehicle().getModel();
-            String brand = m.getBrand() != null ? m.getBrand().trim() : "";
             String code  = m.getModelCode() != null ? m.getModelCode().trim() : "";
-            vehicleModelStr = (brand + " " + code).trim();
+            vehicleModelStr = code.trim();
             if (vehicleModelStr.isEmpty()) vehicleModelStr = null;
         }
 
