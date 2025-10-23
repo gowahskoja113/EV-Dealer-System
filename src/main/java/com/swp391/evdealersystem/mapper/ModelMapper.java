@@ -13,6 +13,8 @@ public class ModelMapper {
         Model m = new Model();
         m.setModelCode(req.getModelCode());
         m.setBrand(req.getBrand());
+        m.setColor(req.getColor());
+        m.setProductionYear(req.getProductionYear());
         return m;
     }
 
@@ -20,6 +22,8 @@ public class ModelMapper {
         if (req == null || m == null) return;
         if (req.getModelCode() != null) m.setModelCode(req.getModelCode());
         if (req.getBrand() != null) m.setBrand(req.getBrand());
+        if (req.getColor() != null) m.setColor(req.getColor());
+        if (req.getProductionYear() != null) m.setProductionYear(req.getProductionYear());
     }
 
     public ModelResponse toResponse(Model m) {
@@ -28,6 +32,8 @@ public class ModelMapper {
         r.setModelId(m.getModelId());
         r.setModelCode(m.getModelCode());
         r.setBrand(m.getBrand());
+        r.setColor(m.getColor());
+        r.setProductionYear(m.getProductionYear());
         return r;
     }
 }
