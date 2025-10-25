@@ -20,12 +20,6 @@ public class ElectricVehicleController {
 
     private final ElectricVehicleService service;
 
-    @GetMapping
-    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    public ResponseEntity<List<ElectricVehicleResponse>> listByModel(@PathVariable Long modelId) {
-        return ResponseEntity.ok(service.getByModelId(modelId));
-    }
-
     @GetMapping("/all")
 //    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -42,9 +36,7 @@ public class ElectricVehicleController {
 
     @GetMapping("/{vehicleId}")
     @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    public ResponseEntity<ElectricVehicleResponse> getById(@PathVariable Long modelId,
-                                                           @PathVariable Long vehicleId) {
-
+    public ResponseEntity<ElectricVehicleResponse> getById(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(service.getById(vehicleId));
     }
 
