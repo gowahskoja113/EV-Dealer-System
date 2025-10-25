@@ -8,7 +8,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +21,12 @@ import java.util.List;
 public class ElectricVehicleController {
 
     private final ElectricVehicleService service;
-    private final VehicleStatusService statusService;
+
+    @GetMapping
+    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
+    public ResponseEntity<List<ElectricVehicleResponse>> listByModel(@PathVariable Long modelId) {
+        return ResponseEntity.ok(service.getByModelId(modelId));
+    }
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
@@ -53,12 +60,4 @@ public class ElectricVehicleController {
         service.delete(vehicleId);
         return ResponseEntity.noContent().build();
     }
-
-//     //(Optional) Các endpoint trạng thái — dùng VehicleStatusService (nếu bạn muốn mở sẵn API)
-//     @PostMapping("/{vehicleId}/hold")
-//     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
-//     public ResponseEntity<ElectricVehicleResponse> hold(@PathVariable Long vehicleId,
-//                                                         @RequestParam(defaultValue = "30") long durationMinutes) {
-//         var ev = statusService.placeHold(vehicleId, durationMinutes);
-//         return ResponseEntity.ok(service.toResponse(ev));
 }
