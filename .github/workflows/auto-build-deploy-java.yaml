@@ -3,10 +3,10 @@ name: CI/CD for Spring Boot Application (Local Docker)
 on:
   push:
     branches:
-      - master # Chạy workflow khi có push lên nhánh 'master' (hoặc 'main')
+      - main # Chạy workflow khi có push lên nhánh 'master' (hoặc 'main')
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build-and-deploy:
