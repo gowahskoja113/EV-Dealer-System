@@ -1,22 +1,26 @@
 package com.swp391.evdealersystem.dto.response;
 
-import com.swp391.evdealersystem.enums.OrderStatus;
+import com.swp391.evdealersystem.enums.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class OrderResponse {
     private Long orderId;
-
     private Long customerId;
     private String customerName;
-    private String customerPhone;
-
     private Long vehicleId;
-    private Long vehicleModelId;
-    private String vehicleModelCode;
-
-    private LocalDateTime orderDate;
+    private String vehicleModel;
+    private BigDecimal totalAmount;
+    private BigDecimal depositAmount;
     private OrderStatus status;
+    private OrderPaymentStatus paymentStatus;
+    private LocalDate deliveryDate;
+    private LocalDateTime orderDate;
+    private List<InstallmentResponse> installments;
 }

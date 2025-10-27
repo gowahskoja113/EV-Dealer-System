@@ -21,10 +21,10 @@ public class ElectricVehicle {
     private Long vehicleId;
 
     @Column(nullable = false)
-    private long cost;
+    private BigDecimal cost;
 
     @Column(nullable = false)
-    private long price;
+    private BigDecimal price;
 
     @Column(name = "battery_capacity", nullable = false)
     private Integer batteryCapacity;

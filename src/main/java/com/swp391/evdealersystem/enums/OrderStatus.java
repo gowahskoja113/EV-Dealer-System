@@ -1,7 +1,9 @@
 package com.swp391.evdealersystem.enums;
 
 public enum OrderStatus {
-    PENDING,
+    NEW,
     CONFIRMED,
+    PROCESSING,
+    DELIVERED,
     CANCELLED
 }
