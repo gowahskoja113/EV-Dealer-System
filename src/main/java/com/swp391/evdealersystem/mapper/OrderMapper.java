@@ -2,39 +2,68 @@ package com.swp391.evdealersystem.mapper;
 
 import com.swp391.evdealersystem.dto.request.OrderRequest;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
-import com.swp391.evdealersystem.entity.Customer;
-import com.swp391.evdealersystem.entity.ElectricVehicle;
-import com.swp391.evdealersystem.entity.Order;
+import com.swp391.evdealersystem.entity.*;
+import com.swp391.evdealersystem.enums.*;
+import com.swp391.evdealersystem.repository.CustomerRepository;
+import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
 public class OrderMapper {
 
-    public static Order toEntity(OrderRequest req, Customer customer, ElectricVehicle vehicle) {
-        Order o = new Order();
-        o.setCustomer(customer);
-        o.setVehicle(vehicle);
-        o.setOrderDate(req.getOrderDate());
-        o.setStatus(req.getStatus());
-        return o;
-    }
+    private final InstallmentMapper installmentMapper;
+    private final CustomerRepository customerRepo;
+    private final ElectricVehicleRepository vehicleRepo;
 
-    public static void updateEntity(Order o, OrderRequest req, Customer customer, ElectricVehicle vehicle) {
-        o.setCustomer(customer);
-        o.setVehicle(vehicle);
-        o.setOrderDate(req.getOrderDate());
-        o.setStatus(req.getStatus());
-    }
+    public Order toEntity(OrderRequest req) {
+        Customer customer = customerRepo.findById(req.getCustomerId())
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+        ElectricVehicle vehicle = vehicleRepo.findById(req.getVehicleId())
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
 
-    public static OrderResponse toResponse(Order o) {
-        return OrderResponse.builder()
-                .orderId(o.getOrderId())
-                .customerId(o.getCustomer().getCustomerId())
-                .customerName(o.getCustomer().getName())
-                .customerPhone(o.getCustomer().getPhoneNumber())
-                .vehicleId(o.getVehicle().getVehicleId())
-                .vehicleModelId(o.getVehicle().getModel().getModelId())
-                .vehicleModelCode(o.getVehicle().getModel().getModelCode())
-                .orderDate(o.getOrderDate())
-                .status(o.getStatus())
+        return Order.builder()
+                .customer(customer)
+                .vehicle(vehicle)
+                .orderDate(LocalDateTime.now())
+                .status(req.getStatus() != null ? req.getStatus() : OrderStatus.NEW)
+                .totalAmount(req.getTotalAmount())
+                .depositAmount(req.getDepositAmount())
+                .deliveryDate(req.getDeliveryDate())
+                .paymentStatus(OrderPaymentStatus.UNPAID)
+                .currency("VND")
                 .build();
+    }
+
+    public OrderResponse toResponse(Order entity) {
+        if (entity == null) return null;
+        return OrderResponse.builder()
+                .orderId(entity.getOrderId())
+                .customerId(entity.getCustomer() != null ? entity.getCustomer().getCustomerId() : null)
+                .customerName(entity.getCustomer() != null ? entity.getCustomer().getName() : null)
+                .vehicleId(entity.getVehicle() != null ? entity.getVehicle().getVehicleId() : null)
+                .vehicleModel(entity.getVehicle() != null ? entity.getVehicle().getModel().getModelCode() : null)
+                .totalAmount(entity.getTotalAmount())
+                .depositAmount(entity.getDepositAmount())
+                .status(entity.getStatus())
+                .paymentStatus(entity.getPaymentStatus())
+                .deliveryDate(entity.getDeliveryDate())
+                .orderDate(entity.getOrderDate())
+                .installments(entity.getInstallments() == null ? null :
+                        entity.getInstallments().stream()
+                                .map(installmentMapper::toResponse)
+                                .collect(Collectors.toList()))
+                .build();
+    }
+
+    public void updateEntity(Order entity, OrderRequest req) {
+        if (req.getTotalAmount() != null) entity.setTotalAmount(req.getTotalAmount());
+        if (req.getDepositAmount() != null) entity.setDepositAmount(req.getDepositAmount());
+        if (req.getStatus() != null) entity.setStatus(req.getStatus());
+        if (req.getDeliveryDate() != null) entity.setDeliveryDate(req.getDeliveryDate());
     }
 }

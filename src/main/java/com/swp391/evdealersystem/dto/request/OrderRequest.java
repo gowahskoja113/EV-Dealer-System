@@ -1,22 +1,18 @@
 package com.swp391.evdealersystem.dto.request;
 
 import com.swp391.evdealersystem.enums.OrderStatus;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class OrderRequest {
-
-    @NotNull
     private Long customerId;
-
-    @NotNull
     private Long vehicleId;
-
-    private LocalDateTime orderDate;
-
-    @NotNull
+    private BigDecimal totalAmount;
+    private BigDecimal depositAmount;
     private OrderStatus status;
+    private LocalDate deliveryDate;
 }

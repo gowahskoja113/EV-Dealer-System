@@ -17,7 +17,6 @@ public class ElectricVehicleMapper {
         return ev;
     }
 
-    // update KHÔNG đụng tới model
     public void updateEntity(ElectricVehicle ev, ElectricVehicleRequest req) {
         if (ev == null || req == null) return;
         if (req.getCost() != null) ev.setCost(req.getCost());
