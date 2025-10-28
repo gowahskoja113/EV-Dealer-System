@@ -1,8 +1,10 @@
 package com.swp391.evdealersystem.dto.response;
 
+import com.swp391.evdealersystem.enums.VehicleStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Data
 public class ElectricVehicleResponse {
@@ -16,4 +18,10 @@ public class ElectricVehicleResponse {
     private String brand;
     private String color;
     private Integer productionYear;
+
+    private Long warehouseId;
+    private String imageUrl;
+    private VehicleStatus status;
+    private OffsetDateTime holdUntil;
+    private boolean selectableNow;
 }
