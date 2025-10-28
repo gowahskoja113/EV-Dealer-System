@@ -1,31 +1,29 @@
 package com.swp391.evdealersystem.dto.request;
 
+import com.swp391.evdealersystem.enums.VehicleStatus;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
+import java.math.BigDecimal;
+
+@Data
 public class ElectricVehicleRequest {
 
-    @NotNull
+    private Long modelId;
     private String modelCode;
 
-    public String getModelCode() {
-        return modelCode;
-    }
+    @NotNull(message = "Warehouse ID is required")
+    private Long warehouseId;
 
-    public void setModelCode(String modelCode) {
-        this.modelCode = modelCode;
-    }
+    @NotNull(message = "Cost is required")
+    private BigDecimal cost;
 
-    @NotNull
-    private Long cost;
-    @NotNull
-    private Long price;
-    @NotNull
+    @NotNull(message = "Price is required")
+    private BigDecimal price;
+
+    @NotNull(message = "Battery capacity is required")
     private Integer batteryCapacity;
 
-    public Long getCost() { return cost; }
-    public void setCost(Long cost) { this.cost = cost; }
-    public Long getPrice() { return price; }
-    public void setPrice(Long price) { this.price = price; }
-    public Integer getBatteryCapacity() { return batteryCapacity; }
-    public void setBatteryCapacity(Integer batteryCapacity) { this.batteryCapacity = batteryCapacity; }
+    private String imageUrl;
+    private VehicleStatus status;
 }
