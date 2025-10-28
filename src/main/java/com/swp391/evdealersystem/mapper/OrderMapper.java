@@ -26,6 +26,7 @@ public class OrderMapper {
         ElectricVehicle vehicle = vehicleRepo.findById(req.getVehicleId())
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
 
+
         return Order.builder()
                 .customer(customer)
                 .vehicle(vehicle)

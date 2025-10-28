@@ -1,4 +1,3 @@
-// entity/Order.java
 package com.swp391.evdealersystem.entity;
 
 import com.swp391.evdealersystem.enums.OrderPaymentStatus;
@@ -23,7 +22,8 @@ import java.util.*;
         })
 public class Order {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_id") private Long orderId;
+    @Column(name = "order_id")
+    private Long orderId;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false,
@@ -42,34 +42,47 @@ public class Order {
     @Column(name = "status", nullable = false, length = 20)
     private OrderStatus status;
 
-    @Column(name = "total_amount", precision = 18, scale = 2, nullable = false)
+    @Column(name = "total_amount", precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
     @Column(name = "deposit_amount", precision = 18, scale = 2)
     private BigDecimal depositAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", length = 20, nullable = false)
+    @Column(name = "payment_status", length = 20)
     private OrderPaymentStatus paymentStatus = OrderPaymentStatus.UNPAID;
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;
 
-    @Column(name = "currency", length = 8, nullable = false)
+    @Column(name = "currency", length = 8)
     private String currency = "VND";
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequence ASC")
     private List<Installment> installments = new ArrayList<>();
 
-    @Column(name = "created_at", nullable = false) private LocalDateTime createdAt;
-    @Column(name = "updated_at", nullable = false) private LocalDateTime updatedAt;
-    @Version @Column(name = "version") private Long version;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @PrePersist void prePersist() {
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    @PrePersist
+    void prePersist() {
         if (orderDate == null) orderDate = LocalDateTime.now();
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (updatedAt == null) updatedAt = createdAt;
+        if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
+        if (currency == null) currency = "VND";
     }
-    @PreUpdate void preUpdate() { updatedAt = LocalDateTime.now(); }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
