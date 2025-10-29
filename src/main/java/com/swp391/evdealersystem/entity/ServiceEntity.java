@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;;
 @Data
 @Entity
-@Table(name="service_item", indexes=@Index(columnList="name", unique=true))
+@Table(name="service_entity", indexes=@Index(columnList="name", unique=true))
 public class ServiceEntity
 {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
