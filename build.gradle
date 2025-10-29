@@ -7,29 +7,40 @@ plugins {
 group = 'HeathCareSystem.example'
 version = '0.0.1-SNAPSHOT'
 description = 'Project for HeathCareSystem'
-sourceCompatibility = '21'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 dependencies {
-    // Spring Boot Starter
+    // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // SQL Server JDBC driver
-    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
+    // SQL Server JDBC driver (JRE11 artifact hoạt động tốt trên JDK 21)
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
 
     // MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
-    // Lombok
-    implementation 'org.projectlombok:lombok'
+    // Lombok (compileOnly + annotationProcessor, KHÔNG dùng implementation)
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
     // JWT
@@ -37,17 +48,21 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    // ModelMapper
-    implementation 'org.modelmapper.extensions:modelmapper-spring:3.0.0'
+    // ModelMapper (tránh extension Spring cũ; dùng core lib)
+    implementation 'org.modelmapper:modelmapper:3.2.0'
 
-    // JAXB (dùng nếu cần với JDK 21)
+    // JAXB (nếu bạn thực sự cần cho phần mail/XML – còn không thì có thể bỏ)
     implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+
+    // Swagger (Springdoc)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
 
-    //Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 tasks.named('test') {
