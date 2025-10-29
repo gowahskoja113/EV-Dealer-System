@@ -26,10 +26,10 @@ public class Model {
     @Column(name = "model_code", length = 50, unique = true, nullable = false)
     private String modelCode;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String brand;
 
-    @Column(name = "model_color", length = 100, nullable = false)
+    @Column(name = "model_color", length = 100, nullable = true)
     private String color;
 
     private Integer productionYear;
@@ -39,5 +39,4 @@ public class Model {
 
     @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WarehouseStock> warehouseStocks = new ArrayList<>();
-
 }

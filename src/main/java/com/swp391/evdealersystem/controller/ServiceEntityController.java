@@ -7,13 +7,15 @@ import com.swp391.evdealersystem.service.ServiceEntityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/service-items")
+@EnableJpaAuditing
+@RequestMapping("/api/service-entitys")
 public class ServiceEntityController {
 
     private final ServiceEntityService service;
