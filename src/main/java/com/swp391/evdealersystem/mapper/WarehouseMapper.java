@@ -1,8 +1,8 @@
 package com.swp391.evdealersystem.mapper;
 
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
-import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseResponse;
+import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
 import com.swp391.evdealersystem.entity.Warehouse;
 import com.swp391.evdealersystem.entity.WarehouseStock;
 import org.springframework.stereotype.Component;
@@ -14,15 +14,15 @@ public class WarehouseMapper {
 
     public Warehouse toEntity(WarehouseRequest req) {
         Warehouse w = new Warehouse();
+        w.setWarehouseName(req.getWarehouseName());
         w.setWarehouseLocation(req.getWarehouseLocation());
         w.setVehicleQuantity(0);
-        w.setWarehouseName(req.getWarehouseName());
         return w;
     }
 
     public void updateEntity(Warehouse w, WarehouseRequest req) {
-        w.setWarehouseLocation(req.getWarehouseLocation());
         w.setWarehouseName(req.getWarehouseName());
+        w.setWarehouseLocation(req.getWarehouseLocation());
     }
 
     public WarehouseResponse toResponse(Warehouse w) {
@@ -31,29 +31,31 @@ public class WarehouseMapper {
                 .toList();
 
         int total = w.getStocks().stream()
-                .map(WarehouseStock::getQuantity)
-                .reduce(0, Integer::sum);
+                .mapToInt(WarehouseStock::getQuantity)
+                .sum();
 
-        return WarehouseResponse.builder()
-                .warehouseId(w.getWarehouseId())
-                .warehouseLocation(w.getWarehouseLocation())
-                .warehouseName(w.getWarehouseName())
-                .vehicleQuantity(total)
-                .items(items)
-                .build();
+        WarehouseResponse res = new WarehouseResponse();
+        res.setWarehouseId(w.getWarehouseId());
+        res.setWarehouseName(w.getWarehouseName());
+        res.setWarehouseLocation(w.getWarehouseLocation());
+        res.setVehicleQuantity(total);
+        res.setItems(items);
+        return res;
     }
 
     private WarehouseStockResponse toItemResponse(WarehouseStock s) {
         var v = s.getVehicle();
         var m = v.getModel();
 
-        return WarehouseStockResponse.builder()
-                .vehicleId(v.getVehicleId())
-                .modelCode(m != null ? m.getModelCode() : null)
-                .brand(m != null ? m.getBrand() : null)
-                .color(m != null ? m.getColor() : null)
-                .productionYear(m != null ? m.getProductionYear() : null)
-                .quantity(s.getQuantity())
-                .build();
+        WarehouseStockResponse r = new WarehouseStockResponse();
+        r.setVehicleId(v.getVehicleId());
+        if (m != null) {
+            r.setModelCode(m.getModelCode());
+            r.setBrand(m.getBrand());
+            r.setColor(m.getColor());
+            r.setProductionYear(m.getProductionYear());
+        }
+        r.setQuantity(s.getQuantity());
+        return r;
     }
 }
