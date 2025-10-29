@@ -32,7 +32,7 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
         ServiceRecord e = new ServiceRecord();
         e.setUser(userRepo.findById(req.getUserId()).orElseThrow(() -> nf("User", req.getUserId())));
         e.setCustomer(customerRepo.findById(req.getCustomerId()).orElseThrow(() -> nf("Customer", req.getCustomerId())));
-        e.setService(serviceRepo.findById(req.getServiceId()).orElseThrow(() -> nf("ServiceItem", req.getServiceId())));
+        e.setService(serviceRepo.findById(req.getServiceId()).orElseThrow(() -> nf("ServiceEntity", req.getServiceId())));
         e.setContent(req.getContent());
         e.setNote(req.getNote());
         return mapper.toResponse(repo.save(e));
@@ -50,18 +50,20 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
 
     @Override @Transactional(readOnly = true)
     public Page<ServiceRecordResponse> byCustomer(Long customerId, Pageable p){
-        return repo.findByCustomer_Id(customerId, p).map(mapper::toResponse);
+        return repo.findByCustomer_CustomerId(customerId, p).map(mapper::toResponse);
     }
 
     @Override @Transactional(readOnly = true)
-    public Page<ServiceRecordResponse> byServiceItem(Long itemId, Pageable p){
-        return repo.findByServiceItem_Id(itemId, p).map(mapper::toResponse);
+    public Page<ServiceRecordResponse> byServiceEntity(Long serviceId, Pageable p){
+        return repo.findByService_Id(serviceId, p).map(mapper::toResponse);
     }
 
     @Override @Transactional(readOnly = true)
     public Page<ServiceRecordResponse> byUser(Long userId, Pageable p){
-        return repo.findByUser_Id(userId, p).map(mapper::toResponse);
+        return repo.findByUser_UserId(userId, p).map(mapper::toResponse);
     }
+
+
 
     @Override
     public ServiceRecordResponse update(Long id, ServiceRecordUpdateRequest req){

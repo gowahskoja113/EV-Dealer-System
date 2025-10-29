@@ -3,7 +3,6 @@ package com.swp391.evdealersystem.controller;
 import com.swp391.evdealersystem.dto.request.ServiceRecordRequest;
 import com.swp391.evdealersystem.dto.request.ServiceRecordUpdateRequest;
 import com.swp391.evdealersystem.dto.response.ServiceRecordResponse;
-import com.swp391.evdealersystem.entity.ServiceRecord;
 import com.swp391.evdealersystem.service.ServiceRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,7 @@ public class ServiceRecordController {
 
     @GetMapping("/by-service/{itemId}")
     public Page<ServiceRecordResponse> byService(@PathVariable Long itemId, @PageableDefault(size=20) Pageable p){
-        return service.byServiceItem(itemId, p);
+        return service.byServiceEntity(itemId, p);
     }
 
     @GetMapping("/by-user/{userId}")
