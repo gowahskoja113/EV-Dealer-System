@@ -8,7 +8,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class WarehouseStockResponse {
-    private Long modelId;
+    private Long vehicleId;
     private String modelCode;
     private String brand;
     private String color;

@@ -8,12 +8,12 @@ import lombok.Setter;
 @Table(
         name = "warehouse_stock",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_stock_warehouse_model",
-                columnNames = {"warehouse_id", "model_id"}
+                name = "uk_stock_warehouse_vehicle",
+                columnNames = {"warehouse_id", "vehicle_id"}
         ),
         indexes = {
                 @Index(name = "idx_stock_wh", columnList = "warehouse_id"),
-                @Index(name = "idx_stock_model", columnList = "model_id")
+                @Index(name = "idx_stock_vehicle", columnList = "vehicle_id")
         }
 )
 @Getter
@@ -32,10 +32,10 @@ public class WarehouseStock {
     private Warehouse warehouse;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "model_id",
+    @JoinColumn(name = "vehicle_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_stock_model"))
-    private Model model;
+            foreignKey = @ForeignKey(name = "fk_stock_vehicle"))
+    private ElectricVehicle vehicle;
 
     @Column(nullable = false)
     private Integer quantity;

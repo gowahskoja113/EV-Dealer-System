@@ -37,7 +37,7 @@ public class Model {
     @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ElectricVehicle> vehicles;
 
-    @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
+//    @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
 
 }

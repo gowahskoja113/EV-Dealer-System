@@ -60,6 +60,9 @@ public class ElectricVehicle {
     @Column(name = "hold_until")
     private OffsetDateTime holdUntil;
 
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
+
     // helper: check xe co duoc tao order hay khong
     @Transient
     public boolean isSelectableNow() {
