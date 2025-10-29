@@ -8,7 +8,7 @@ public class ServiceRecordResponse {
     private Long id;
     private Long userId;
     private Long customerId;
-    private Long serviceItemId;
+    private Long serviceId;
     private String content;
     private String note;
     private Instant createdAt;

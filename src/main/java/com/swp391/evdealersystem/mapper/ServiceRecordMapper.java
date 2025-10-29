@@ -12,7 +12,7 @@ public class ServiceRecordMapper {
         r.setId(e.getId());
         r.setUserId(e.getUser().getUserId());
         r.setCustomerId(e.getCustomer().getCustomerId());
-        r.setServiceItemId(e.getService().getId());
+        r.setServiceId(e.getService().getId());
         r.setContent(e.getContent());
         r.setNote(e.getNote());
         r.setCreatedAt(e.getCreatedAt());

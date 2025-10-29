@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.time.Instant;
 
@@ -13,6 +14,7 @@ import java.time.Instant;
         @Index(columnList="customer_id"),
         @Index(columnList="service_id")
 })
+@EnableJpaAuditing
 @EntityListeners(AuditingEntityListener.class)
 @Data
 public class ServiceRecord {
