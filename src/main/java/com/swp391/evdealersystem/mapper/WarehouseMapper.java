@@ -21,7 +21,6 @@ public class WarehouseMapper {
     }
 
     public void updateEntity(Warehouse w, WarehouseRequest req) {
-
         w.setWarehouseLocation(req.getWarehouseLocation());
         w.setWarehouseName(req.getWarehouseName());
     }
@@ -45,12 +44,15 @@ public class WarehouseMapper {
     }
 
     private WarehouseStockResponse toItemResponse(WarehouseStock s) {
+        var v = s.getVehicle();
+        var m = v.getModel();
+
         return WarehouseStockResponse.builder()
-                .modelId(s.getModel().getModelId())
-                .modelCode(s.getModel().getModelCode())
-                .color(s.getModel().getColor())
-                .productionYear(s.getModel().getProductionYear())
-                .brand(s.getModel().getBrand())
+                .vehicleId(v.getVehicleId())
+                .modelCode(m != null ? m.getModelCode() : null)
+                .brand(m != null ? m.getBrand() : null)
+                .color(m != null ? m.getColor() : null)
+                .productionYear(m != null ? m.getProductionYear() : null)
                 .quantity(s.getQuantity())
                 .build();
     }
