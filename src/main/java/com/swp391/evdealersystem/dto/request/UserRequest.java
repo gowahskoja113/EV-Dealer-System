@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class UserRequest {
-    private Integer userId;
+    private Long userId;
 
     @NotBlank
     private String password;

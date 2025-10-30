@@ -1,9 +1,11 @@
 package com.swp391.evdealersystem.entity;
-
 import com.swp391.evdealersystem.enums.CustomerStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -25,6 +27,9 @@ public class Customer {
             foreignKey = @ForeignKey(name = "fk_customer_vehicle"))
     private ElectricVehicle vehicle;
 
+    @OneToMany(mappedBy = "customer", orphanRemoval = false)
+    private List<Order> orders = new ArrayList<>();
+
     @NotBlank
     @Size(max = 120)
     @Column(nullable = false, length = 120)
@@ -37,9 +42,17 @@ public class Customer {
 
     @Size(max = 255)
     @Column(name = "interest_vehicle", length = 255)
-    private String interestVehicle;  // mô tả xe quan tâm
+    private String interestVehicle;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private CustomerStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "assigned_sales_id",
+            foreignKey = @ForeignKey(name = "fk_customer_assigned_sales")
+    )
+    private User assignedSales;
+
 }

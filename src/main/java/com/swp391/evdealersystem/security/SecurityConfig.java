@@ -45,14 +45,6 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-
-                        // --- ADMIN + EVMSTAFF được phép POST/PUT/DELETE ---
-                        .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "EVMSTAFF")
-
                         // còn lại (nếu có) thì cần xác thực
                         .anyRequest().authenticated()
                 );

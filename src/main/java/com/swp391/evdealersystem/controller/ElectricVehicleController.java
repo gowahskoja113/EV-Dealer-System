@@ -3,64 +3,71 @@ package com.swp391.evdealersystem.controller;
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
 import com.swp391.evdealersystem.service.ElectricVehicleService;
+import com.swp391.evdealersystem.service.VehicleStatusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("api/electric-vehicles")
+@RequestMapping("/api/electric-vehicles")
 @RequiredArgsConstructor
 public class ElectricVehicleController {
 
     private final ElectricVehicleService service;
-
-    @GetMapping
-    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    public ResponseEntity<List<ElectricVehicleResponse>> listByModel(@PathVariable Long modelId) {
-        return ResponseEntity.ok(service.getByModelId(modelId));
-    }
+    private final VehicleStatusService statusService;
 
     @GetMapping("/all")
-//    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
     public ResponseEntity<List<ElectricVehicleResponse>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
 
     @PostMapping
-//    @Secured({"ROLE_ADMIN","ROLE_EVMSTAFF"})
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ElectricVehicleResponse> create(@Valid @RequestBody ElectricVehicleRequest request) {
-        return ResponseEntity.ok(service.create(request));
+        ElectricVehicleResponse created = service.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/{vehicleId}")
-    @Secured({"ROLE_ADMIN", "ROLE_EVMSTAFF"})
-    public ResponseEntity<ElectricVehicleResponse> getById(@PathVariable Long modelId,
-                                                           @PathVariable Long vehicleId) {
-
+    @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
+    public ResponseEntity<ElectricVehicleResponse> getById(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(service.getById(vehicleId));
     }
 
     @PutMapping("/{vehicleId}")
-    @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<ElectricVehicleResponse> update(@PathVariable Long modelId,
-                                                          @PathVariable Long vehicleId,
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ElectricVehicleResponse> update(@PathVariable Long vehicleId,
                                                           @Valid @RequestBody ElectricVehicleRequest request) {
         return ResponseEntity.ok(service.update(vehicleId, request));
     }
 
     @DeleteMapping("/{vehicleId}")
-    @Secured({"ROLE_ADMIN"})
-    public ResponseEntity<Void> delete(@PathVariable Long modelId,
-                                       @PathVariable Long vehicleId) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long vehicleId) {
         service.delete(vehicleId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/by-warehouse/{warehouseId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ElectricVehicleResponse>> listByWarehouse(
+            @PathVariable Long warehouseId,
+            @RequestParam(defaultValue = "false") boolean selectableOnly) {
+
+        return ResponseEntity.ok(service.getByWarehouse(warehouseId, selectableOnly));
+    }
+
+//     //(Optional) Các endpoint trạng thái — dùng VehicleStatusService (nếu bạn muốn mở sẵn API)
+//     @PostMapping("/{vehicleId}/hold")
+//     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
+//     public ResponseEntity<ElectricVehicleResponse> hold(@PathVariable Long vehicleId,
+//                                                         @RequestParam(defaultValue = "30") long durationMinutes) {
+//         var ev = statusService.placeHold(vehicleId, durationMinutes);
+//         return ResponseEntity.ok(service.toResponse(ev));
 }
