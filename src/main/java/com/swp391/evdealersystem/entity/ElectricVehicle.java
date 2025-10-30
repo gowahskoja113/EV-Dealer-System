@@ -43,7 +43,7 @@ public class ElectricVehicle {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(name = "fk_vehicle_warehouse"))
     private Warehouse warehouse;
 

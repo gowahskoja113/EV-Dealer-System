@@ -8,7 +8,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -21,6 +20,7 @@ import java.util.*;
                 @Index(name = "idx_orders_order_date",     columnList = "order_date")
         })
 public class Order {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long orderId;
@@ -33,37 +33,32 @@ public class Order {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_order_vehicle"))
-    private ElectricVehicle vehicle;
+    private ElectricVehicle vehicle; // LƯU Ý: vehicle phải có field price (BigDecimal)
 
     @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private OrderStatus status;
-
-    @Column(name = "total_amount", precision = 18, scale = 2)
-    private BigDecimal totalAmount;
+    @Column(name = "status", nullable = true, length = 20)
+    private OrderStatus status; // PROCESSING -> COMPLETED / CANCELED
 
     @Column(name = "deposit_amount", precision = 18, scale = 2)
-    private BigDecimal depositAmount;
+    private BigDecimal depositAmount; // có thể null/0
 
+    // Số tiền còn lại phải thanh toán sau khi trừ cọc
+    @Column(name = "remaining_amount", precision = 18, scale = 2, nullable = true)
+    private BigDecimal remainingAmount;
+
+    // Trạng thái thanh toán của PHẦN CÒN LẠI
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", length = 20)
-    private OrderPaymentStatus paymentStatus = OrderPaymentStatus.UNPAID;
+    @Column(name = "payment_status", length = 20, nullable = true)
+    private OrderPaymentStatus paymentStatus; // UNPAID | PARTIAL | PAID | OVERDUE (ví dụ)
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;
 
-    @Column(name = "currency", length = 8)
-    private String currency = "VND";
-//
-//    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @OrderBy("sequence ASC")
-//    private List<Installment> installments = new ArrayList<>();
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "currency", length = 8, nullable = true)
+    private String currency;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -72,17 +67,72 @@ public class Order {
     @Column(name = "version")
     private Long version;
 
+    // ===================== Lifecycle =====================
+
     @PrePersist
     void prePersist() {
         if (orderDate == null) orderDate = LocalDateTime.now();
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (updatedAt == null) updatedAt = createdAt;
-        if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
-        if (currency == null) currency = "VND";
+        if (currency == null)  currency = "VND";
+
+        // default cọc
+        if (depositAmount == null) depositAmount = BigDecimal.ZERO;
+
+        // tính remaining = price - deposit, không âm
+        BigDecimal price = (vehicle != null && vehicle.getPrice() != null)
+                ? vehicle.getPrice()
+                : BigDecimal.ZERO;
+
+        remainingAmount = maxZero(price.subtract(depositAmount));
+
+        // mặc định: đơn hàng mới tạo là PROCESSING
+        if (status == null) status = OrderStatus.PROCESSING;
+
+        // paymentStatus là của phần còn lại => nếu remaining=0 thì PAID, ngược lại UNPAID
+        if (paymentStatus == null) {
+            paymentStatus = remainingAmount.signum() == 0
+                    ? OrderPaymentStatus.PAID
+                    : OrderPaymentStatus.UNPAID;
+        }
+
+        // đồng bộ trạng thái đơn khi tạo
+        syncOrderStatusFromPayment();
+        if (updatedAt == null) updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     void preUpdate() {
+        // đảm bảo remainingAmount không bị sai lệch nếu depositAmount hoặc vehicle.price đổi
+        BigDecimal price = (vehicle != null && vehicle.getPrice() != null)
+                ? vehicle.getPrice()
+                : BigDecimal.ZERO;
+
+        if (depositAmount == null) depositAmount = BigDecimal.ZERO;
+        remainingAmount = maxZero(price.subtract(depositAmount));
+
+        // nếu remaining = 0, ép paymentStatus = PAID
+        if (remainingAmount.signum() == 0 && paymentStatus != OrderPaymentStatus.PAID) {
+            paymentStatus = OrderPaymentStatus.PAID;
+        }
+
+        syncOrderStatusFromPayment();
         updatedAt = LocalDateTime.now();
+    }
+
+    private void syncOrderStatusFromPayment() {
+        // Rule:
+        // - paymentStatus PAID  -> COMPLETED
+        // - paymentStatus OVERDUE -> CANCELED
+        // - còn lại              -> PROCESSING
+        if (paymentStatus == OrderPaymentStatus.PAID) {
+            status = OrderStatus.COMPLETED;
+        } else if (paymentStatus == OrderPaymentStatus.OVERDUE) {
+            status = OrderStatus.CANCELED;
+        } else {
+            status = OrderStatus.PROCESSING;
+        }
+    }
+
+    private static BigDecimal maxZero(BigDecimal v) {
+        return v.signum() < 0 ? BigDecimal.ZERO : v;
     }
 }
