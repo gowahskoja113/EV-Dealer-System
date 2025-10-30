@@ -42,4 +42,8 @@ public interface ElectricVehicleRepository extends JpaRepository<ElectricVehicle
 
     @EntityGraph(attributePaths = {"model", "warehouse"})
     Optional<ElectricVehicle> findByVehicleIdAndStatus(Long vehicleId, VehicleStatus status);
+
+    @EntityGraph(attributePaths = {"model", "warehouse"})
+    List<ElectricVehicle> findByWarehouse_WarehouseId(Long warehouseId);
+
 }

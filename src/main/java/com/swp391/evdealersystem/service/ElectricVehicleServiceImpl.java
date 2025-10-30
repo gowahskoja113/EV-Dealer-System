@@ -5,6 +5,7 @@ import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.Model;
 import com.swp391.evdealersystem.entity.Warehouse;
+import com.swp391.evdealersystem.exception.NotFoundException;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -94,5 +96,20 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
             throw new IllegalArgumentException("Vehicle not found: " + vehicleId);
         }
         evRepo.deleteById(vehicleId);
+    }
+
+    @Override
+    public List<ElectricVehicleResponse> getByWarehouse(Long warehouseId, boolean selectableOnly) {
+        // Kiểm tra kho có tồn tại không
+        warehouseRepo.findById(warehouseId)
+                .orElseThrow(() -> new NotFoundException("Warehouse not found with id = " + warehouseId));
+
+        List<ElectricVehicle> vehicles = selectableOnly
+                ? evRepo.findSelectableInWarehouse(warehouseId, OffsetDateTime.now())
+                : evRepo.findByWarehouse_WarehouseId(warehouseId);
+
+        return vehicles.stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }

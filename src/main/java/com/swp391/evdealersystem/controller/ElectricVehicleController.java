@@ -54,6 +54,15 @@ public class ElectricVehicleController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/by-warehouse/{warehouseId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ElectricVehicleResponse>> listByWarehouse(
+            @PathVariable Long warehouseId,
+            @RequestParam(defaultValue = "false") boolean selectableOnly) {
+
+        return ResponseEntity.ok(service.getByWarehouse(warehouseId, selectableOnly));
+    }
+
 //     //(Optional) Các endpoint trạng thái — dùng VehicleStatusService (nếu bạn muốn mở sẵn API)
 //     @PostMapping("/{vehicleId}/hold")
 //     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
