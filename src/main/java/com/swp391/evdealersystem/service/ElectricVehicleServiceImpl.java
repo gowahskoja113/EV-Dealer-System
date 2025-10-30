@@ -40,7 +40,7 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
     @Override
     @Transactional
     public ElectricVehicleResponse create(ElectricVehicleRequest req) {
-        // BẮT BUỘC có modelId và warehouseId
+
         Model model = modelRepo.findById(req.getModelId())
                 .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelId()));
 
@@ -73,7 +73,7 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
             model = modelRepo.findByModelCode(req.getModelCode())
                     .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelCode()));
         }
-        // 🔹 Nếu truyền modelId (trong trường hợp create hoặc admin muốn đổi theo ID)
+
         else if (req.getModelId() != null) {
             model = modelRepo.findById(req.getModelId())
                     .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelId()));
@@ -100,7 +100,6 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
 
     @Override
     public List<ElectricVehicleResponse> getByWarehouse(Long warehouseId, boolean selectableOnly) {
-        // Kiểm tra kho có tồn tại không
         warehouseRepo.findById(warehouseId)
                 .orElseThrow(() -> new NotFoundException("Warehouse not found with id = " + warehouseId));
 

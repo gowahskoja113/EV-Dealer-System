@@ -57,10 +57,10 @@ public class Order {
 
     @Column(name = "currency", length = 8)
     private String currency = "VND";
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("sequence ASC")
-    private List<Installment> installments = new ArrayList<>();
+//
+//    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @OrderBy("sequence ASC")
+//    private List<Installment> installments = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderMapper {
 
-    private final InstallmentMapper installmentMapper;
     private final CustomerRepository customerRepo;
     private final ElectricVehicleRepository vehicleRepo;
 
@@ -54,10 +53,6 @@ public class OrderMapper {
                 .paymentStatus(entity.getPaymentStatus())
                 .deliveryDate(entity.getDeliveryDate())
                 .orderDate(entity.getOrderDate())
-                .installments(entity.getInstallments() == null ? null :
-                        entity.getInstallments().stream()
-                                .map(installmentMapper::toResponse)
-                                .collect(Collectors.toList()))
                 .build();
     }
 

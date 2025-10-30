@@ -13,5 +13,4 @@ public interface ElectricVehicleService {
     ElectricVehicleResponse update(Long vehicleId, ElectricVehicleRequest request);
     void delete(Long id);
     List<ElectricVehicleResponse> getByWarehouse(Long warehouseId, boolean selectableOnly);
-
 }
