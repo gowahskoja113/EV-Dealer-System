@@ -10,20 +10,21 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.SQLServerDialect
+        jdbc:
+          time_zone: UTC
   jackson:
     time-zone: Asia/Ho_Chi_Minh
 
 # Cấu hình VNPAY
 vnpay:
-  tmnCode: YOUR_TMN_CODE
-  hashSecret: YOUR_HASH_SECRET
+  tmnCode: 81KUS46F
+  hashSecret: WU7YVUBHETLQKAQU9HIXEQIPVBOTFAGN
   payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  returnUrl: https://<public-domain>/api/payments/vnpay/return
-  ipnUrl: https://<public-domain>/api/payments/vnpay/ipn
-  version: 2.1.0
-  command: pay
-  locale: vn
+  returnUrl: https://your-public-domain.com/api/payments/vnpay/return
+  ipnUrl: https://your-public-domain.com/api/payments/vnpay/ipn
   currCode: VND
+  locale: vn
+  orderType: other
 
 server:
   port: 8080
