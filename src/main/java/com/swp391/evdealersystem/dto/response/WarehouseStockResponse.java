@@ -1,14 +1,14 @@
 package com.swp391.evdealersystem.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
+@Setter
 @AllArgsConstructor
 @Builder
+@NoArgsConstructor
 public class WarehouseStockResponse {
-    private Long modelId;
+    private Long vehicleId;
     private String modelCode;
     private String brand;
     private String color;

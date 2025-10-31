@@ -26,7 +26,7 @@ public class Model {
     @Column(name = "model_code", length = 50, unique = true, nullable = false)
     private String modelCode;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String brand;
 
     @Column(name = "model_color", length = 100, nullable = false)
@@ -37,7 +37,7 @@ public class Model {
     @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ElectricVehicle> vehicles;
 
-    @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
+//    @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
 
 }

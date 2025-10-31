@@ -1,8 +1,8 @@
 package com.swp391.evdealersystem.enums;
 
-public enum TransactionStatus {
+public enum PaymentStatus {
     PENDING,
-    SUCCESS,
+    PAID,
     FAILED,
-    REFUNDED
+    CANCELED
 }

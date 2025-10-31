@@ -1,12 +1,17 @@
 package com.swp391.evdealersystem.controller;
 
+import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
 import com.swp391.evdealersystem.dto.request.OrderRequest;
+import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
 import com.swp391.evdealersystem.service.OrderService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.List;
@@ -18,12 +23,22 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @PostMapping
-    public ResponseEntity<OrderResponse> create(@Valid @RequestBody OrderRequest request) {
-        OrderResponse res = orderService.create(request);
+    // ====== B1: Tạo hợp đồng đặt cọc ======
+    @PostMapping("/deposit")
+    public ResponseEntity<OrderDepositResponse> createDeposit(@Valid @RequestBody OrderDepositRequest req) {
+        OrderDepositResponse res = orderService.createDepositOrder(req);
         return ResponseEntity.created(URI.create("/api/orders/" + res.getOrderId())).body(res);
     }
 
+    // ====== B2: Thanh toán phần còn lại ======
+    @PostMapping("/{orderId}/pay-remaining")
+    public ResponseEntity<OrderResponse> payRemaining(@PathVariable Long orderId,
+                                                      @Valid @RequestBody OrderRequest req) {
+        OrderResponse res = orderService.payRemaining(orderId, req);
+        return ResponseEntity.ok(res);
+    }
+
+    // ====== CRUD / Queries ======
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getById(id));
@@ -44,15 +59,20 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getByVehicleId(vehicleId));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<OrderResponse> update(@PathVariable Long id,
-                                                @Valid @RequestBody OrderRequest request) {
-        return ResponseEntity.ok(orderService.update(id, request));
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Exception
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler({ IllegalArgumentException.class, MethodArgumentTypeMismatchException.class })
+    public ResponseEntity<String> handleBadRequest(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }

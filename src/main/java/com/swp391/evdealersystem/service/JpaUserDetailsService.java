@@ -32,6 +32,4 @@ public class JpaUserDetailsService implements UserDetailsService {
                 List.of(authority)
         );
     }
-
-
 }

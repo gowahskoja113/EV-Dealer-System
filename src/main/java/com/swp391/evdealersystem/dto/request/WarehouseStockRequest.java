@@ -5,10 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter
+@Getter
+@Setter
 public class WarehouseStockRequest {
-    @NotNull(message = "Model ID is required")
-    private Long modelId;
+    @NotNull(message = "Vehicle ID is required")
+    private Long vehicleId;
 
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be >= 0")

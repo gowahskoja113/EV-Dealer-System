@@ -1,18 +1,20 @@
 package com.swp391.evdealersystem.dto.request;
 
-import com.swp391.evdealersystem.enums.OrderStatus;
+import com.swp391.evdealersystem.enums.OrderPaymentStatus;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class OrderRequest {
-    private Long customerId;
-    private Long vehicleId;
-    private BigDecimal totalAmount;
-    private BigDecimal depositAmount;
-    private OrderStatus status;
+
+    /**
+     * Nếu không truyền -> mặc định PAID (đã thanh toán phần còn lại).
+     * Có thể truyền OVERDUE để hủy do quá hạn (-> Order chuyển CANCELED).
+     */
+    private OrderPaymentStatus paymentStatus;
+
+    /** optional: nếu muốn set ngày giao khi thanh toán xong */
     private LocalDate deliveryDate;
 }
