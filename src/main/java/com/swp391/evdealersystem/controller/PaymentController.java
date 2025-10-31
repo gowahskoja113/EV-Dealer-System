@@ -1,17 +1,21 @@
 package com.swp391.evdealersystem.controller;
 
+import com.swp391.evdealersystem.dto.request.PaymentCreateCashRequest;
+import com.swp391.evdealersystem.dto.request.PaymentRequest;
 import com.swp391.evdealersystem.dto.response.PaymentResponse;
 import com.swp391.evdealersystem.entity.Payment;
-import com.swp391.evdealersystem.enums.PaymentPurpose;
 import com.swp391.evdealersystem.mapper.PaymentMapper;
 import com.swp391.evdealersystem.repository.PaymentRepository;
 import com.swp391.evdealersystem.service.PaymentService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -22,27 +26,24 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentRepository paymentRepo;
-    private final PaymentMapper paymentMapper;
+    private final PaymentMapper mapper;
 
-    // Tạo URL thanh toán VNPay cho CỌC / PHẦN CÒN LẠI
+    // ================== VNPAY ==================
+
+    // Tạo URL thanh toán VNPay (DEPOSIT | BALANCE)
     @PostMapping("/vnpay/create")
-    public ResponseEntity<?> createVnPayPayment(
-            @RequestParam Long orderId,
-            @RequestParam PaymentPurpose purpose, // DEPOSIT|BALANCE
-            @RequestParam BigDecimal amount,
-            HttpServletRequest request) {
-
+    public ResponseEntity<PaymentResponse> createVnPayPayment(
+            @Valid @RequestBody PaymentRequest req,
+            HttpServletRequest request
+    ) {
         String clientIp = getClientIp(request);
-        Payment p = paymentService.createVnPayPayment(orderId, purpose, amount, clientIp);
-        return ResponseEntity.ok(Map.of(
-                "paymentId", p.getPaymentId(),
-                "vnpTxnRef", p.getVnpTxnRef(),
-                "payUrl", p.getPayUrl(),
-                "status", p.getStatus().name()
-        ));
+        Payment p = paymentService.createVnPayPayment(
+                req.getOrderId(), req.getPurpose(), req.getAmount(), clientIp
+        );
+        return ResponseEntity.ok(mapper.toResponse(p));
     }
 
-    // VNPay redirect về — bạn có thể trả HTML/redirect FE; ở đây trả text
+    // VNPay redirect về
     @GetMapping("/vnpay/return")
     public ResponseEntity<String> vnpReturn(@RequestParam Map<String, String> params) {
         String msg = paymentService.handleReturn(params);
@@ -56,15 +57,39 @@ public class PaymentController {
         return ResponseEntity.ok(msg);
     }
 
-    @GetMapping("/orders/{orderId}/payments")
-    public ResponseEntity<List<PaymentResponse>> listPaymentsByOrder(@PathVariable Long orderId) {
-        List<PaymentResponse> res = paymentRepo.findAll().stream() // => nên viết repo method findByOrder_OrderId(orderId) để filter
-                .filter(p -> p.getOrder() != null && orderId.equals(p.getOrder().getOrderId()))
-                .map(paymentMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(res);
+    // ================== CASH ==================
+
+    @PostMapping("/cash")
+    public ResponseEntity<PaymentResponse> createCashPayment(@Valid @RequestBody PaymentCreateCashRequest req) {
+        Payment p = paymentService.createCashPayment(req.getOrderId(), req.getPurpose(), req.getAmount());
+        return ResponseEntity.ok(mapper.toResponse(p));
     }
 
+    // ================== QUERY ==================
+
+    @GetMapping("/orders/{orderId}")
+    public ResponseEntity<List<PaymentResponse>> listByOrder(@PathVariable Long orderId) {
+        return ResponseEntity.ok(
+                paymentRepo.findByOrder_OrderIdOrderByCreatedAtDesc(orderId)
+                        .stream().map(mapper::toResponse).toList()
+        );
+    }
+
+    @GetMapping("/{paymentId}")
+    public ResponseEntity<PaymentResponse> getById(@PathVariable Long paymentId) {
+        Payment p = paymentRepo.findById(paymentId)
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found: " + paymentId));
+        return ResponseEntity.ok(mapper.toResponse(p));
+    }
+
+    @GetMapping("/by-txnref/{vnpTxnRef}")
+    public ResponseEntity<PaymentResponse> getByTxnRef(@PathVariable String vnpTxnRef) {
+        Payment p = paymentRepo.findByVnpTxnRef(vnpTxnRef)
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found for vnpTxnRef: " + vnpTxnRef));
+        return ResponseEntity.ok(mapper.toResponse(p));
+    }
+
+    // ================== Helpers & Handlers ==================
 
     private String getClientIp(HttpServletRequest req) {
         String ip = req.getHeader("X-Forwarded-For");
@@ -73,20 +98,13 @@ public class PaymentController {
         return ip;
     }
 
-    @PostMapping("/cash")
-    public ResponseEntity<?> createCashPayment(
-            @RequestParam Long orderId,
-            @RequestParam PaymentPurpose purpose,
-            @RequestParam BigDecimal amount) {
-
-        Payment p = paymentService.createCashPayment(orderId, purpose, amount);
-        return ResponseEntity.ok(Map.of(
-                "paymentId", p.getPaymentId(),
-                "method", p.getPaymentMethod(),
-                "status", p.getStatus(),
-                "purpose", p.getPurpose(),
-                "amount", p.getAmount()
-        ));
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
+    @ExceptionHandler({ IllegalArgumentException.class, MethodArgumentTypeMismatchException.class })
+    public ResponseEntity<String> handleBadRequest(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 }

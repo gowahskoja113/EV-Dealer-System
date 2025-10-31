@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.dto.request;
 
+import com.swp391.evdealersystem.enums.PaymentPurpose;
 import lombok.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -9,9 +10,10 @@ public class PaymentRequest {
     @NotNull @DecimalMin(value = "0.01")
     private BigDecimal amount; // VND
 
+    @NotNull private PaymentPurpose purpose;   // DEPOSIT | BALANCE
 
     @Size(max = 64)
-    private String orderId; // đơn hàng trong hệ thống của bạn
+    private Long orderId; // đơn hàng trong hệ thống của bạn
 
 
     @Size(max = 20)

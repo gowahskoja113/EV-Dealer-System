@@ -62,8 +62,9 @@ public class PaymentServiceImpl implements PaymentService {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         Map<String, String> params = new HashMap<>();
-        params.put("vnp_Version", "2.1.0"); // hoặc lấy từ cfg nếu bạn thêm field version
-        params.put("vnp_Command", "pay");   // hoặc lấy từ cfg nếu bạn thêm field command
+        params.put("vnp_Version", cfg.getVersion()); // thay vì "2.1.0"
+        params.put("vnp_Command", cfg.getCommand()); // thay vì "pay"
+        // hoặc lấy từ cfg nếu bạn thêm field command
         params.put("vnp_TmnCode", cfg.getTmnCode());
         params.put("vnp_Amount", amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString()); // x100
         params.put("vnp_CurrCode", cfg.getCurrCode());
@@ -73,7 +74,6 @@ public class PaymentServiceImpl implements PaymentService {
         params.put("vnp_Locale", cfg.getLocale());
         params.put("vnp_ReturnUrl", cfg.getReturnUrl());
         params.put("vnp_IpAddr", clientIp != null ? clientIp : "127.0.0.1");
-
         // create / expire theo giờ VN (+07:00)
         String create = now.withOffsetSameInstant(ZoneOffset.of("+07:00")).format(VNP_TS);
         String expire = now.plusMinutes(15).withOffsetSameInstant(ZoneOffset.of("+07:00")).format(VNP_TS);
@@ -98,7 +98,6 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepo.save(payment);
     }
 
-    // ======================== CREATE CASH PAYMENT ========================
     @Transactional
     @Override
     public Payment createCashPayment(Long orderId, PaymentPurpose purpose, BigDecimal amount) {

@@ -6,7 +6,7 @@ package com.swp391.evdealersystem.enums;
  */
 public enum OrderPaymentStatus {
     /**
-     * Chưa thanh toán phần còn lại.
+     * Chưa thanh toán.
      */
     UNPAID,
 
