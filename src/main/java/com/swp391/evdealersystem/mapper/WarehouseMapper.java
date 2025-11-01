@@ -17,6 +17,7 @@ public class WarehouseMapper {
     public Warehouse toEntity(WarehouseRequest req) {
         Warehouse w = new Warehouse();
         w.setWarehouseLocation(req.getWarehouseLocation());
+        w.setWarehouseName(req.getWarehouseName());
         w.setVehicleQuantity(0);
         return w;
     }

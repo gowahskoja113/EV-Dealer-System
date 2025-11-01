@@ -25,9 +25,11 @@
         @Column(name = "warehouse_name", nullable = false, length = 255)
         private String warehouseName;
 
-        @Column(name = "vehicle_quantity", nullable = false)
+        @Column(name = "vehicle_quantity", nullable = true)
         private Integer vehicleQuantity = 0;
 
-        @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
+        @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//        @org.hibernate.annotations.BatchSize(size = 50)
+        @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
         private List<WarehouseStock> stocks = new ArrayList<>();
     }

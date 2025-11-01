@@ -17,8 +17,8 @@ public class WarehouseStock {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "model_id")
+//    @org.hibernate.annotations.BatchSize(size = 50)
     private Model model;
-
 
     @Column(nullable = false)
     private Integer quantity;

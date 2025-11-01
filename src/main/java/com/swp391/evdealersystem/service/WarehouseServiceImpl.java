@@ -3,6 +3,8 @@ package com.swp391.evdealersystem.service;
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseStockRequest;
 import com.swp391.evdealersystem.dto.response.WarehouseResponse;
+import com.swp391.evdealersystem.dto.response.WarehouseStockFlat;
+import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
 import com.swp391.evdealersystem.entity.*;
 import com.swp391.evdealersystem.mapper.WarehouseMapper;
 import com.swp391.evdealersystem.repository.*;
@@ -41,34 +43,71 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     @Transactional
     public WarehouseResponse getById(Long id) {
-        Warehouse w = warehouseRepo.findWithStocksById(id)
+        Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
-        // Không còn EV theo warehouse, trả thẳng mapper
-        return mapper.toResponse(w);
+
+        var flats = stockRepo.findFlatByWarehouseId(id);
+
+        var res = new WarehouseResponse();
+        res.setWarehouseId(w.getWarehouseId());
+        res.setWarehouseName(w.getWarehouseName());
+        res.setWarehouseLocation(w.getWarehouseLocation());
+        res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
+        res.setItems(flats.stream().map(f -> {
+            var r = new WarehouseStockResponse();
+            r.setModelCode(f.modelCode());
+            r.setBrand(f.brand());
+            r.setColor(f.color());
+            r.setProductionYear(f.productionYear());
+            r.setQuantity(f.quantity());
+            // nếu cần VIN ở màn chi tiết:
+            var serials = vehicleSerialRepository
+                    .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(
+                            f.modelId(), w.getWarehouseId());
+            r.setVins(serials.stream().map(VehicleSerial::getVin).toList());
+            return r;
+        }).toList());
+        return res;
     }
 
     @Override
     public List<WarehouseResponse> getAll() {
-        // Lấy toàn bộ kho + stocks, không đụng tới EV
-        return warehouseRepo.findAllWithStocks().stream()
-                .map(mapper::toResponse)
-                .toList();
+        List<Warehouse> headers = warehouseRepo.findAllHeaders();
+        return headers.stream().map(w -> {
+            var flats = stockRepo.findFlatByWarehouseId(w.getWarehouseId());
+            var res = new WarehouseResponse();
+            res.setWarehouseId(w.getWarehouseId());
+            res.setWarehouseName(w.getWarehouseName());
+            res.setWarehouseLocation(w.getWarehouseLocation());
+            res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
+            res.setItems(flats.stream().map(f -> {
+                var r = new WarehouseStockResponse();
+                r.setModelCode(f.modelCode());
+                r.setBrand(f.brand());
+                r.setColor(f.color());
+                r.setProductionYear(f.productionYear());
+                r.setQuantity(f.quantity());
+                return r;
+            }).toList());
+            return res;
+        }).toList();
     }
 
     @Override
     @Transactional
     public WarehouseResponse update(Long id, WarehouseRequest request) {
-        Warehouse w = warehouseRepo.findWithStocksById(id)
+        Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
         mapper.updateEntity(w, request);
-        Warehouse saved = warehouseRepo.save(w);
-        return mapper.toResponse(saved);
+        warehouseRepo.save(w);
+
+        return getById(id);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        Warehouse w = warehouseRepo.findWithStocksById(id)
+        Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
         warehouseRepo.delete(w);
     }
@@ -76,24 +115,22 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     @Transactional
     public WarehouseResponse upsertStock(Long warehouseId, WarehouseStockRequest request) {
-        Warehouse wh = warehouseRepo.findWithStocksById(warehouseId)
+        Warehouse wh = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
         Model model = modelRepository.findByModelCode(request.getModelCode())
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + request.getModelCode()));
 
-        // EV đại diện (bắt buộc tồn tại)
         ElectricVehicle ev = vehicleRepo.findByModel_ModelCode(request.getModelCode())
                 .orElseThrow(() -> new IllegalStateException("Chưa tạo xe đại diện cho model " + request.getModelCode()));
 
-        // Tìm/khởi tạo stock
+        // Tìm/khởi tạo stock (không cần chạm wh.getStocks())
         WarehouseStock stock = stockRepo.findByWarehouseAndModel(wh, model)
                 .orElseGet(() -> {
                     WarehouseStock s = new WarehouseStock();
                     s.setWarehouse(wh);
                     s.setModel(model);
                     s.setQuantity(0);
-                    wh.getStocks().add(s);
                     return s;
                 });
 
@@ -101,11 +138,11 @@ public class WarehouseServiceImpl implements WarehouseService {
         int newQty = request.getQuantity();
         int delta  = newQty - oldQty;
 
-        // 1) Cập nhật số lượng
+        // 1) cập nhật số lượng
         stock.setQuantity(newQty);
         stockRepo.save(stock);
 
-        // 2) Đồng bộ VIN theo delta
+        // 2) đồng bộ VIN theo delta
         if (delta > 0) {
             int startSeq = vehicleSerialRepository.findMaxSeqNoByModelAndWarehouse(
                     model.getModelId(), wh.getWarehouseId());
@@ -135,47 +172,30 @@ public class WarehouseServiceImpl implements WarehouseService {
             vehicleSerialRepository.deleteAll(lastSerials);
         }
 
-        // 3) Tổng số trong kho
-        int total = wh.getStocks().stream().mapToInt(WarehouseStock::getQuantity).sum();
+        // 3) tổng số trong kho (không dựa vào wh.getStocks)
+        int total = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
         wh.setVehicleQuantity(total);
         warehouseRepo.save(wh);
 
-        // 4) Trả response + gắn danh sách VIN cho từng item
-        WarehouseResponse res = mapper.toResponse(wh);
-        res.getItems().forEach(item -> {
-            Long modelId = wh.getStocks().stream()
-                    .filter(s -> s.getModel().getModelCode().equals(item.getModelCode()))
-                    .map(s -> s.getModel().getModelId())
-                    .findFirst().orElse(null);
-
-            if (modelId != null) {
-                var serials = vehicleSerialRepository
-                        .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(modelId, wh.getWarehouseId());
-                item.setVins(serials.stream().map(VehicleSerial::getVin).toList());
-            } else {
-                item.setVins(java.util.Collections.emptyList());
-            }
-        });
-        return res;
+        // 4) trả response bằng projection + gắn VIN theo modelId
+        return getById(warehouseId);
     }
-
 
     @Override
     @Transactional
     public WarehouseResponse removeStock(Long warehouseId, String modelCode) {
-        Warehouse w = warehouseRepo.findWithStocksById(warehouseId)
+        Warehouse w = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
         Model m = modelRepository.findByModelCode(modelCode)
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + modelCode));
 
         stockRepo.deleteByWarehouseAndModel(w, m);
-        w.getStocks().removeIf(s -> s.getModel().getModelId().equals(m.getModelId()));
 
-        int total = w.getStocks().stream().mapToInt(WarehouseStock::getQuantity).sum();
+        int total = stockRepo.sumQuantityByWarehouseId(w.getWarehouseId());
         w.setVehicleQuantity(total);
         warehouseRepo.save(w);
 
-        return mapper.toResponse(w);
+        return getById(warehouseId);
     }
 }
