@@ -1,7 +1,7 @@
-    package com.swp391.evdealersystem.enums;
+package com.swp391.evdealersystem.enums;
 
-    public enum OrderStatus {
-        PROCESSING,
-        COMPLETED,
-        CANCELED
-    }
+public enum OrderStatus {
+    PROCESSING,
+    COMPLETED,
+    CANCELED
+}

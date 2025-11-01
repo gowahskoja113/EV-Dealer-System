@@ -31,10 +31,14 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
     public List<ElectricVehicleResponse> getAll() {
         return evRepo.findAll().stream().map(mapper::toResponse).toList();
     }
-
+    
     @Override
+    @Transactional(readOnly = true)
     public List<ElectricVehicleResponse> getByModelId(Long modelId) {
-        return List.of();
+        Model model = modelRepo.findById(modelId)
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + modelId));
+        List<ElectricVehicle> vehicles = evRepo.findByModel(model);
+        return vehicles.stream().map(mapper::toResponse).toList();
     }
 
     @Override

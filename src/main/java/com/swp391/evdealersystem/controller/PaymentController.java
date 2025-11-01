@@ -4,6 +4,7 @@ import com.swp391.evdealersystem.dto.request.PaymentCreateCashRequest;
 import com.swp391.evdealersystem.dto.request.PaymentRequest;
 import com.swp391.evdealersystem.dto.response.PaymentResponse;
 import com.swp391.evdealersystem.entity.Payment;
+import com.swp391.evdealersystem.enums.PaymentPurpose;
 import com.swp391.evdealersystem.mapper.PaymentMapper;
 import com.swp391.evdealersystem.repository.PaymentRepository;
 import com.swp391.evdealersystem.service.PaymentService;
@@ -28,17 +29,30 @@ public class PaymentController {
     private final PaymentRepository paymentRepo;
     private final PaymentMapper mapper;
 
-    // ================== VNPAY ==================
-
-    // Tạo URL thanh toán VNPay (DEPOSIT | BALANCE)
-    @PostMapping("/vnpay/create")
-    public ResponseEntity<PaymentResponse> createVnPayPayment(
+    @PostMapping("/deposit/vnpay/{orderId}")
+    public ResponseEntity<PaymentResponse> createDepositVnpay(
+            @PathVariable Long orderId,
             @Valid @RequestBody PaymentRequest req,
-            HttpServletRequest request
-    ) {
-        String clientIp = getClientIp(request);
+            HttpServletRequest request) {
+        String ip = getClientIp(request);
         Payment p = paymentService.createVnPayPayment(
-                req.getOrderId(), req.getPurpose(), req.getAmount(), clientIp
+                orderId,
+                req.getPurpose(),
+                req.getAmount(),
+                ip
+        );
+        return ResponseEntity.ok(mapper.toResponse(p));
+    }
+
+
+    @PostMapping("/balance/vnpay/{orderId}")
+    public ResponseEntity<PaymentResponse> createBalanceVnpay(
+            @PathVariable Long orderId,
+            @Valid @RequestBody PaymentRequest req,
+            HttpServletRequest request) {
+        String ip = getClientIp(request);
+        Payment p = paymentService.createVnPayPayment(
+                orderId, PaymentPurpose.BALANCE, req.getAmount(), ip
         );
         return ResponseEntity.ok(mapper.toResponse(p));
     }
@@ -88,9 +102,7 @@ public class PaymentController {
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found for vnpTxnRef: " + vnpTxnRef));
         return ResponseEntity.ok(mapper.toResponse(p));
     }
-
     // ================== Helpers & Handlers ==================
-
     private String getClientIp(HttpServletRequest req) {
         String ip = req.getHeader("X-Forwarded-For");
         if (ip == null || ip.isEmpty()) ip = req.getRemoteAddr();

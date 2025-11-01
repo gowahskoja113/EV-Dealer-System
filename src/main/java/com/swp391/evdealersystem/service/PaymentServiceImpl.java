@@ -62,9 +62,8 @@ public class PaymentServiceImpl implements PaymentService {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         Map<String, String> params = new HashMap<>();
-        params.put("vnp_Version", cfg.getVersion()); // thay vì "2.1.0"
-        params.put("vnp_Command", cfg.getCommand()); // thay vì "pay"
-        // hoặc lấy từ cfg nếu bạn thêm field command
+        params.put("vnp_Version", cfg.getVersion());
+        params.put("vnp_Command", cfg.getCommand());
         params.put("vnp_TmnCode", cfg.getTmnCode());
         params.put("vnp_Amount", amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString()); // x100
         params.put("vnp_CurrCode", cfg.getCurrCode());

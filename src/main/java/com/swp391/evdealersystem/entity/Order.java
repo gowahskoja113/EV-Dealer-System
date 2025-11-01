@@ -73,28 +73,18 @@ public class Order {
     void prePersist() {
         if (orderDate == null) orderDate = LocalDateTime.now();
         if (currency == null)  currency = "VND";
-
-        // default cọc
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
 
-        // tính remaining = price - deposit, không âm
-        BigDecimal price = (vehicle != null && vehicle.getPrice() != null)
-                ? vehicle.getPrice()
-                : BigDecimal.ZERO;
-
+        BigDecimal price = (vehicle != null && vehicle.getPrice() != null) ? vehicle.getPrice() : BigDecimal.ZERO;
         remainingAmount = maxZero(price.subtract(depositAmount));
 
-        // mặc định: đơn hàng mới tạo là PROCESSING
         if (status == null) status = OrderStatus.PROCESSING;
 
-        // paymentStatus là của phần còn lại => nếu remaining=0 thì PAID, ngược lại UNPAID
+        // Đừng auto set PAID theo remainingAmount; để UNPAID mặc định
         if (paymentStatus == null) {
-            paymentStatus = remainingAmount.signum() == 0
-                    ? OrderPaymentStatus.PAID
-                    : OrderPaymentStatus.UNPAID;
+            paymentStatus = OrderPaymentStatus.UNPAID;
         }
 
-        // đồng bộ trạng thái đơn khi tạo
         syncOrderStatusFromPayment();
         if (updatedAt == null) updatedAt = LocalDateTime.now();
     }

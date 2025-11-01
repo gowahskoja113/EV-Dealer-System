@@ -63,11 +63,8 @@ public class ElectricVehicleController {
         return ResponseEntity.ok(service.getByWarehouse(warehouseId, selectableOnly));
     }
 
-//     //(Optional) Các endpoint trạng thái — dùng VehicleStatusService (nếu bạn muốn mở sẵn API)
-//     @PostMapping("/{vehicleId}/hold")
-//     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
-//     public ResponseEntity<ElectricVehicleResponse> hold(@PathVariable Long vehicleId,
-//                                                         @RequestParam(defaultValue = "30") long durationMinutes) {
-//         var ev = statusService.placeHold(vehicleId, durationMinutes);
-//         return ResponseEntity.ok(service.toResponse(ev));
+    @GetMapping("/search-by-modelId")
+    public ResponseEntity<List<ElectricVehicleResponse>> searchByModelId(@RequestParam Long modelId) {
+        return ResponseEntity.ok(service.getByModelId(modelId));
+    }
 }

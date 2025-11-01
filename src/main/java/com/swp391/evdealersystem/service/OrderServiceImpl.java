@@ -50,27 +50,20 @@ public class OrderServiceImpl implements OrderService {
 
         validateDeposit(vehicle, req.getDepositAmount());
 
-        OrderPaymentStatus depositStatus = req.getDepositStatus();
-        if (depositStatus == null) {
-            depositStatus = req.getDepositAmount().signum() > 0
-                    ? OrderPaymentStatus.DEPOSIT_PAID
-                    : OrderPaymentStatus.UNPAID;
-        }
-
+        // Luôn để UNPAID; sẽ chuyển sang DEPOSIT_PAID sau khi thanh toán thành công
         Order order = Order.builder()
                 .customer(customer)
                 .vehicle(vehicle)
-                .orderDate(req.getOrderDate())       // null -> @PrePersist set now
-                .status(OrderStatus.PROCESSING)      // sẽ sync theo paymentStatus
+                .orderDate(req.getOrderDate())   // null -> @PrePersist set now
+                .status(OrderStatus.PROCESSING)  // sync theo paymentStatus
                 .depositAmount(req.getDepositAmount())
-                .paymentStatus(depositStatus)        // thể hiện trạng thái tiền cọc
+                .paymentStatus(OrderPaymentStatus.UNPAID)
                 .currency("VND")
                 .build();
 
-        order = orderRepo.save(order);               // @PrePersist tính remaining + sync status
+        order = orderRepo.save(order);
         return mapper.toDepositResponse(order);
     }
-
     // ===== BƯỚC 2: Thanh toán phần còn lại =====
     @Transactional
     @Override

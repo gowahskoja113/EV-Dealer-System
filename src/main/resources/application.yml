@@ -20,7 +20,7 @@ vnpay:
   tmnCode: 81KUS46F
   hashSecret: WU7YVUBHETLQKAQU9HIXEQIPVBOTFAGN
   payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  returnUrl: https://your-public-domain.com/api/payments/vnpay/return
+  returnUrl: www.google.com
   ipnUrl: https://your-public-domain.com/api/payments/vnpay/ipn
   currCode: VND
   locale: vn
