@@ -2,15 +2,19 @@ package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
+import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
+import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
+import com.swp391.evdealersystem.repository.ModelRepository;
+import com.swp391.evdealersystem.repository.WarehouseRepository;
 import com.swp391.evdealersystem.service.ElectricVehicleService;
-import com.swp391.evdealersystem.service.VehicleStatusService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -19,7 +23,16 @@ import java.util.List;
 public class ElectricVehicleController {
 
     private final ElectricVehicleService service;
-    private final VehicleStatusService statusService;
+    private final ElectricVehicleRepository evRepo;
+    private final ModelRepository modelRepo;
+    private final WarehouseRepository warehouseRepo;
+    private final ElectricVehicleMapper vehicleMapper;
+
+    @GetMapping("/search-by-modelCode/{modelCode}")
+    @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
+    public ResponseEntity<List<ElectricVehicleResponse>> searchByModelCode(@PathVariable String modelCode) {
+        return ResponseEntity.ok(service.getByModelCode(modelCode));
+    }
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
@@ -29,9 +42,24 @@ public class ElectricVehicleController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ElectricVehicleResponse> create(@Valid @RequestBody ElectricVehicleRequest request) {
-        ElectricVehicleResponse created = service.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<ElectricVehicleResponse> create(@Valid @RequestBody ElectricVehicleRequest req) {
+        if (req.getModelCode() == null && req.getModelId() == null) {
+            throw new IllegalArgumentException("modelCode hoặc modelId là bắt buộc");
+        }
+        // enforce 1 model ↔ 1 EV
+        String code = req.getModelCode() != null
+                ? req.getModelCode()
+                : modelRepo.findById(req.getModelId())
+                .orElseThrow(() -> new EntityNotFoundException("Model not found"))
+                .getModelCode();
+
+        if (evRepo.existsByModel_ModelCode(code)) {
+            throw new IllegalArgumentException("Đã tồn tại xe đại diện cho modelCode=" + code);
+        }
+
+        // Ủy quyền cho service để tái sử dụng mapper/logic chung
+        ElectricVehicleResponse saved = service.create(req);
+        return ResponseEntity.created(URI.create("/api/electric-vehicles/" + saved.getVehicleId())).body(saved);
     }
 
     @GetMapping("/{vehicleId}")
@@ -53,21 +81,4 @@ public class ElectricVehicleController {
         service.delete(vehicleId);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/by-warehouse/{warehouseId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ElectricVehicleResponse>> listByWarehouse(
-            @PathVariable Long warehouseId,
-            @RequestParam(defaultValue = "false") boolean selectableOnly) {
-
-        return ResponseEntity.ok(service.getByWarehouse(warehouseId, selectableOnly));
-    }
-
-//     //(Optional) Các endpoint trạng thái — dùng VehicleStatusService (nếu bạn muốn mở sẵn API)
-//     @PostMapping("/{vehicleId}/hold")
-//     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")
-//     public ResponseEntity<ElectricVehicleResponse> hold(@PathVariable Long vehicleId,
-//                                                         @RequestParam(defaultValue = "30") long durationMinutes) {
-//         var ev = statusService.placeHold(vehicleId, durationMinutes);
-//         return ResponseEntity.ok(service.toResponse(ev));
 }

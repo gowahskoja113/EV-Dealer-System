@@ -14,5 +14,5 @@ public interface WarehouseService {
     void delete(Long id);
 
     WarehouseResponse upsertStock(Long warehouseId, WarehouseStockRequest request);
-    WarehouseResponse removeStock(Long warehouseId, Long modelId);
+    public WarehouseResponse removeStock(Long warehouseId, String modelCode);
 }

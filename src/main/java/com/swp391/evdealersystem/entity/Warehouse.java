@@ -28,10 +28,6 @@
         @Column(name = "vehicle_quantity", nullable = false)
         private Integer vehicleQuantity = 0;
 
-        @JsonIgnore
-        @OneToMany(mappedBy = "warehouse", cascade = CascadeType.PERSIST, orphanRemoval = true)
-        private List<ElectricVehicle> vehicles = new ArrayList<>();
-
         @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<WarehouseStock> stocks = new ArrayList<>();
     }

@@ -9,7 +9,7 @@ public interface ElectricVehicleService {
     ElectricVehicleResponse create(ElectricVehicleRequest request);
     ElectricVehicleResponse getById(Long id);
     List<ElectricVehicleResponse> getAll();
-    List<ElectricVehicleResponse> getByModelId(Long modelId);
+    List<ElectricVehicleResponse> getByModelCode(String modelName);
     ElectricVehicleResponse update(Long vehicleId, ElectricVehicleRequest request);
     void delete(Long id);
     List<ElectricVehicleResponse> getByWarehouse(Long warehouseId, boolean selectableOnly);

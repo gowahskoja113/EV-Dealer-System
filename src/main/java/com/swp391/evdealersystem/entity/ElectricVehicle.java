@@ -11,20 +11,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "electric_vehicle",
+@Table(
+        name = "electric_vehicle",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "ux_ev_model", columnNames = "model_id")
+        },
         indexes = {
                 @Index(name = "idx_ev_status", columnList = "status"),
-                @Index(name = "idx_ev_warehouse_status", columnList = "warehouse_id,status"),
                 @Index(name = "idx_ev_hold_until", columnList = "hold_until")
         })
 @Getter
 @Setter
 public class ElectricVehicle {
-
     @Id
-    @Column(name = "vehicle_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "vehicle_id")
     private Long vehicleId;
+
+    @Column(name = "vin", length = 64, unique = true)
+    private String vin;
 
     @Column(nullable = false, precision = 18, scale = 2)
     private BigDecimal cost;
@@ -36,16 +41,8 @@ public class ElectricVehicle {
     private Integer batteryCapacity;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "model_id",
-            referencedColumnName = "model_id",
-            nullable = false)
+    @JoinColumn(name = "model_id", nullable = false)
     private Model model;
-
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "warehouse_id",
-            nullable = true,
-            foreignKey = @ForeignKey(name = "fk_vehicle_warehouse"))
-    private Warehouse warehouse;
 
     @OneToMany(mappedBy = "vehicle", orphanRemoval = false)
     private List<Order> orders = new ArrayList<>();
@@ -60,10 +57,6 @@ public class ElectricVehicle {
     @Column(name = "hold_until")
     private OffsetDateTime holdUntil;
 
-    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<WarehouseStock> warehouseStocks = new ArrayList<>();
-
-    // helper: check xe co duoc tao order hay khong
     @Transient
     public boolean isSelectableNow() {
         if (status == VehicleStatus.SOLD_OUT) return false;

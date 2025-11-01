@@ -1,35 +1,24 @@
 package com.swp391.evdealersystem.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
 @Entity
-@Table(
-        name = "warehouse_stock",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_stock_warehouse_vehicle",
-                columnNames = {"warehouse_id", "vehicle_id"}
-        )
-)
-@Getter
-@Setter
+@Data
+@Table(name = "warehouse_stock")
 public class WarehouseStock {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "stock_id")
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long stockId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "warehouse_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_stock_warehouse"))
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "vehicle_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_stock_vehicle"))
-    private ElectricVehicle vehicle;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "model_id")
+    private Model model;
+
 
     @Column(nullable = false)
     private Integer quantity;
