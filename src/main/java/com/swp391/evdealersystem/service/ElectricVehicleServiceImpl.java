@@ -4,11 +4,9 @@ import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.Model;
-import com.swp391.evdealersystem.entity.Warehouse;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
-import com.swp391.evdealersystem.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +19,6 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
 
     private final ElectricVehicleRepository evRepo;
     private final ModelRepository modelRepo;
-    private final WarehouseRepository warehouseRepo;
     private final ElectricVehicleMapper mapper;
 
     @Override
@@ -31,21 +28,28 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
     }
 
     @Override
-    public List<ElectricVehicleResponse> getByModelId(Long modelId) {
-        return List.of();
+    @Transactional(readOnly = true)
+    public List<ElectricVehicleResponse> getByModelCode(String modelCode) {
+        Model model = modelRepo.findByModelCode(modelCode)
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + modelCode));
+        return evRepo.findByModel(model).stream().map(mapper::toResponse).toList();
     }
 
     @Override
     @Transactional
     public ElectricVehicleResponse create(ElectricVehicleRequest req) {
-        // BẮT BUỘC có modelId và warehouseId
-        Model model = modelRepo.findById(req.getModelId())
+        Model model = (req.getModelCode() != null)
+                ? modelRepo.findByModelCode(req.getModelCode())
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelCode()))
+                : modelRepo.findById(req.getModelId())
                 .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelId()));
 
-        Warehouse warehouse = warehouseRepo.findById(req.getWarehouseId())
-                .orElseThrow(() -> new IllegalArgumentException("Warehouse not found: " + req.getWarehouseId()));
+        // enforce “1 model ↔ 1 EV”
+        if (evRepo.existsByModel_ModelCode(model.getModelCode())) {
+            throw new IllegalArgumentException("Đã tồn tại xe đại diện cho modelCode=" + model.getModelCode());
+        }
 
-        ElectricVehicle ev = mapper.toEntity(req, model, warehouse);
+        ElectricVehicle ev = mapper.toEntity(req, model);
         ev = evRepo.save(ev);
         return mapper.toResponse(ev);
     }
@@ -65,24 +69,15 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
 
         Model model = null;
-        Warehouse warehouse = null;
-
         if (req.getModelCode() != null) {
             model = modelRepo.findByModelCode(req.getModelCode())
                     .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelCode()));
-        }
-        // 🔹 Nếu truyền modelId (trong trường hợp create hoặc admin muốn đổi theo ID)
-        else if (req.getModelId() != null) {
+        } else if (req.getModelId() != null) {
             model = modelRepo.findById(req.getModelId())
                     .orElseThrow(() -> new IllegalArgumentException("Model not found: " + req.getModelId()));
         }
 
-        if (req.getWarehouseId() != null) {
-            warehouse = warehouseRepo.findById(req.getWarehouseId())
-                    .orElseThrow(() -> new IllegalArgumentException("Warehouse not found: " + req.getWarehouseId()));
-        }
-
-        mapper.updateEntity(ev, req, model, warehouse);
+        mapper.updateEntity(ev, req, model);
         ev = evRepo.save(ev);
         return mapper.toResponse(ev);
     }

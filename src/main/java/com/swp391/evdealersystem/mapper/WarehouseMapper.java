@@ -1,8 +1,10 @@
 package com.swp391.evdealersystem.mapper;
 
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
+import com.swp391.evdealersystem.dto.response.VehicleBrief;
 import com.swp391.evdealersystem.dto.response.WarehouseResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
+import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.Warehouse;
 import com.swp391.evdealersystem.entity.WarehouseStock;
 import org.springframework.stereotype.Component;
@@ -43,19 +45,25 @@ public class WarehouseMapper {
         return res;
     }
 
-    private WarehouseStockResponse toItemResponse(WarehouseStock s) {
-        var v = s.getVehicle();
-        var m = v.getModel();
+    public VehicleBrief toVehicleBrief(ElectricVehicle v) {
+        VehicleBrief b = new VehicleBrief();
+        b.setVehicleId(v.getVehicleId());
+        b.setImageUrl(v.getImageUrl());
+        b.setStatus(v.getStatus());
+        b.setHoldUntil(v.getHoldUntil());
+        b.setSelectableNow(v.isSelectableNow());
+        return b;
+    }
 
+    public WarehouseStockResponse toItemResponse(WarehouseStock s) {
+        var m = s.getModel();
         WarehouseStockResponse r = new WarehouseStockResponse();
-        r.setVehicleId(v.getVehicleId());
-        if (m != null) {
-            r.setModelCode(m.getModelCode());
-            r.setBrand(m.getBrand());
-            r.setColor(m.getColor());
-            r.setProductionYear(m.getProductionYear());
-        }
+        r.setModelCode(m.getModelCode());
+        r.setBrand(m.getBrand());
+        r.setColor(m.getColor());
+        r.setProductionYear(m.getProductionYear());
         r.setQuantity(s.getQuantity());
+        // r.setVehicles(...) sẽ được gán ở Service để tránh N+1
         return r;
     }
 }

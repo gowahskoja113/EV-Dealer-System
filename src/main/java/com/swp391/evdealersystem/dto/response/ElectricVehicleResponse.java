@@ -19,7 +19,6 @@ public class ElectricVehicleResponse {
     private String color;
     private Integer productionYear;
 
-    private Long warehouseId;
     private String imageUrl;
     private VehicleStatus status;
     private OffsetDateTime holdUntil;

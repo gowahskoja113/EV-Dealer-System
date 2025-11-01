@@ -22,5 +22,4 @@ public class OrderResponse {
     private OrderPaymentStatus paymentStatus;
     private LocalDate deliveryDate;
     private LocalDateTime orderDate;
-    private List<InstallmentResponse> installments;
 }

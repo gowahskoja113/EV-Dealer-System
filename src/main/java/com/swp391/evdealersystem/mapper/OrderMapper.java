@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderMapper {
 
-    private final InstallmentMapper installmentMapper;
     private final CustomerRepository customerRepo;
     private final ElectricVehicleRepository vehicleRepo;
 
@@ -40,26 +39,26 @@ public class OrderMapper {
                 .build();
     }
 
-    public OrderResponse toResponse(Order entity) {
-        if (entity == null) return null;
-        return OrderResponse.builder()
-                .orderId(entity.getOrderId())
-                .customerId(entity.getCustomer() != null ? entity.getCustomer().getCustomerId() : null)
-                .customerName(entity.getCustomer() != null ? entity.getCustomer().getName() : null)
-                .vehicleId(entity.getVehicle() != null ? entity.getVehicle().getVehicleId() : null)
-                .vehicleModel(entity.getVehicle() != null ? entity.getVehicle().getModel().getModelCode() : null)
-                .totalAmount(entity.getTotalAmount())
-                .depositAmount(entity.getDepositAmount())
-                .status(entity.getStatus())
-                .paymentStatus(entity.getPaymentStatus())
-                .deliveryDate(entity.getDeliveryDate())
-                .orderDate(entity.getOrderDate())
-                .installments(entity.getInstallments() == null ? null :
-                        entity.getInstallments().stream()
-                                .map(installmentMapper::toResponse)
-                                .collect(Collectors.toList()))
-                .build();
-    }
+//    public OrderResponse toResponse(Order entity) {
+//        if (entity == null) return null;
+//        return OrderResponse.builder()
+//                .orderId(entity.getOrderId())
+//                .customerId(entity.getCustomer() != null ? entity.getCustomer().getCustomerId() : null)
+//                .customerName(entity.getCustomer() != null ? entity.getCustomer().getName() : null)
+//                .vehicleId(entity.getVehicle() != null ? entity.getVehicle().getVehicleId() : null)
+//                .vehicleModel(entity.getVehicle() != null ? entity.getVehicle().getModel().getModelCode() : null)
+//                .totalAmount(entity.getTotalAmount())
+//                .depositAmount(entity.getDepositAmount())
+//                .status(entity.getStatus())
+//                .paymentStatus(entity.getPaymentStatus())
+//                .deliveryDate(entity.getDeliveryDate())
+//                .orderDate(entity.getOrderDate())
+//                .installments(entity.getInstallments() == null ? null :
+//                        entity.getInstallments().stream()
+//                                .map(installmentMapper::toResponse)
+//                                .collect(Collectors.toList()))
+//                .build();
+//    }
 
     public void updateEntity(Order entity, OrderRequest req) {
         if (req.getTotalAmount() != null) entity.setTotalAmount(req.getTotalAmount());

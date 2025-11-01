@@ -48,16 +48,15 @@ public class WarehouseController {
         return ResponseEntity.noContent().build();
     }
 
-    // ---- Stocks ----
     @PostMapping("/{id}/stocks")
     public ResponseEntity<WarehouseResponse> upsertStock(@PathVariable Long id,
                                                          @Valid @RequestBody WarehouseStockRequest request) {
         return ResponseEntity.ok(warehouseService.upsertStock(id, request));
     }
 
-    @DeleteMapping("/{id}/stocks/{modelId}")
+    @DeleteMapping("/{id}/stocks/{modelCode}")
     public ResponseEntity<WarehouseResponse> removeStock(@PathVariable Long id,
-                                                         @PathVariable Long modelId) {
-        return ResponseEntity.ok(warehouseService.removeStock(id, modelId));
+                                                         @PathVariable String modelCode) {
+        return ResponseEntity.ok(warehouseService.removeStock(id, modelCode));
     }
 }

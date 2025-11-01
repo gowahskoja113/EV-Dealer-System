@@ -5,15 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
-
 @Data
 public class ElectricVehicleRequest {
-
     private Long modelId;
     private String modelCode;
-
-    @NotNull(message = "Warehouse ID is required")
-    private Long warehouseId;
 
     @NotNull(message = "Cost is required")
     private BigDecimal cost;
