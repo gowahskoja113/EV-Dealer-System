@@ -4,7 +4,6 @@ import com.swp391.evdealersystem.enums.OrderPaymentStatus;
 import com.swp391.evdealersystem.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
