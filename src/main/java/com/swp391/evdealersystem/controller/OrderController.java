@@ -1,10 +1,6 @@
 package com.swp391.evdealersystem.controller;
 
-import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
-import com.swp391.evdealersystem.dto.request.OrderRequest;
-import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
-import com.swp391.evdealersystem.dto.response.OrderResponse;
-import com.swp391.evdealersystem.service.OrderService;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
