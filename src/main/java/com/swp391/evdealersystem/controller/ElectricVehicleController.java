@@ -7,7 +7,7 @@ import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
 import com.swp391.evdealersystem.repository.WarehouseRepository;
 import com.swp391.evdealersystem.service.ElectricVehicleService;
-import jakarta.persistence.EntityNotFoundException;
+import com.swp391.evdealersystem.service.VehicleStatusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
