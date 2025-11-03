@@ -50,9 +50,7 @@ public class ElectricVehicleMapper {
 
         r.setImageUrl(ev.getImageUrl());
         r.setStatus(ev.getStatus());
-        r.setHoldUntil(ev.getHoldUntil());
         r.setSelectableNow(ev.isSelectableNow());
         return r;
     }
 }
-

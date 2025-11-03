@@ -21,6 +21,5 @@ public class ElectricVehicleResponse {
 
     private String imageUrl;
     private VehicleStatus status;
-    private OffsetDateTime holdUntil;
     private boolean selectableNow;
 }

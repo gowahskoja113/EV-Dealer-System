@@ -16,7 +16,5 @@ public class WarehouseStockResponse {
     private Integer productionYear;
     private Integer quantity;
 
-    private List<VehicleBrief> vehicles;
-    private List<String> vins;
-
+    private List<VehicleSerialResponse> serials;
 }

@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
+// import java.time.OffsetDateTime; // Bỏ import không dùng
+// import java.time.temporal.ChronoUnit; // Bỏ import không dùng
 
 @Service
 @RequiredArgsConstructor
@@ -18,48 +18,11 @@ public class VehicleStatusServiceImpl implements VehicleStatusService {
 
     private final ElectricVehicleRepository repo;
 
-    @Override
-    @Transactional
-    public ElectricVehicle placeHold(Long vehicleId, long holdMinutes) {
-        ElectricVehicle ev = repo.findById(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
+    // Đã bỏ phương thức placeHold(Long vehicleId, long holdMinutes)
+    // vì nó phụ thuộc vào holdUntil và trạng thái HOLD
 
-        // neu xe da ban het thi khong duoc dat coc
-        if (ev.getStatus() == VehicleStatus.SOLD_OUT) {
-            throw new IllegalStateException("Vehicle is sold out");
-        }
-        // neu dang hole va chua het han thi khong duoc dat
-        if (ev.getStatus() == VehicleStatus.HOLD
-                && ev.getHoldUntil() != null
-                && OffsetDateTime.now().isBefore(ev.getHoldUntil())) {
-            throw new IllegalStateException("Vehicle is already on hold");
-        }
-
-        // Đặt hold
-        ev.setStatus(VehicleStatus.HOLD);
-        ev.setHoldUntil(OffsetDateTime.now().plus(holdMinutes, ChronoUnit.MINUTES));
-        ElectricVehicle saved = repo.save(ev);
-        log.debug("Vehicle {} put on HOLD until {}", saved.getVehicleId(), saved.getHoldUntil());
-        return saved;
-    }
-
-    @Override
-    @Transactional
-    public ElectricVehicle releaseHoldIfExpired(Long vehicleId) {
-        ElectricVehicle ev = repo.findById(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
-
-        // Chỉ nhả hold khi đã hết hạn hoặc không có hạn
-        if (ev.getStatus() == VehicleStatus.HOLD
-                && (ev.getHoldUntil() == null || OffsetDateTime.now().isAfter(ev.getHoldUntil()))) {
-            ev.setStatus(VehicleStatus.AVAILABLE);
-            ev.setHoldUntil(null);
-            ElectricVehicle saved = repo.save(ev);
-            log.debug("Vehicle {} HOLD released -> AVAILABLE", saved.getVehicleId());
-            return saved;
-        }
-        return ev;
-    }
+    // Đã bỏ phương thức releaseHoldIfExpired(Long vehicleId)
+    // vì nó phụ thuộc vào holdUntil và trạng thái HOLD
 
     @Override
     @Transactional
@@ -68,7 +31,7 @@ public class VehicleStatusServiceImpl implements VehicleStatusService {
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
 
         ev.setStatus(VehicleStatus.SOLD_OUT);
-        ev.setHoldUntil(null);
+        // ev.setHoldUntil(null); // Đã bỏ
         ElectricVehicle saved = repo.save(ev);
         log.debug("Vehicle {} marked as SOLD_OUT", saved.getVehicleId());
         return saved;
@@ -81,7 +44,7 @@ public class VehicleStatusServiceImpl implements VehicleStatusService {
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
 
         ev.setStatus(VehicleStatus.AVAILABLE);
-        ev.setHoldUntil(null);
+        // ev.setHoldUntil(null); // Đã bỏ
         ElectricVehicle saved = repo.save(ev);
         log.debug("Vehicle {} marked as AVAILABLE", saved.getVehicleId());
         return saved;

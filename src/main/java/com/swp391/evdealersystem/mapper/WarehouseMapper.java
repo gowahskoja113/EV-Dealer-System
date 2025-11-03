@@ -50,7 +50,6 @@ public class WarehouseMapper {
         b.setVehicleId(v.getVehicleId());
         b.setImageUrl(v.getImageUrl());
         b.setStatus(v.getStatus());
-        b.setHoldUntil(v.getHoldUntil());
         b.setSelectableNow(v.isSelectableNow());
         return b;
     }

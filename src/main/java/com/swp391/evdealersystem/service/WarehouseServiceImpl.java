@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseStockRequest;
+import com.swp391.evdealersystem.dto.response.VehicleSerialResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseStockFlat;
 import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
@@ -53,6 +54,8 @@ public class WarehouseServiceImpl implements WarehouseService {
         res.setWarehouseName(w.getWarehouseName());
         res.setWarehouseLocation(w.getWarehouseLocation());
         res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
+
+        // --- BẮT ĐẦU THAY ĐỔI ---
         res.setItems(flats.stream().map(f -> {
             var r = new WarehouseStockResponse();
             r.setModelCode(f.modelCode());
@@ -60,18 +63,34 @@ public class WarehouseServiceImpl implements WarehouseService {
             r.setColor(f.color());
             r.setProductionYear(f.productionYear());
             r.setQuantity(f.quantity());
-            // nếu cần VIN ở màn chi tiết:
+
+            // 1. Lấy danh sách các đối tượng VehicleSerial (như cũ)
             var serials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(
                             f.modelId(), w.getWarehouseId());
-            r.setVins(serials.stream().map(VehicleSerial::getVin).toList());
+
+            // 2. Chuyển đổi List<VehicleSerial> sang List<VehicleSerialResponse>
+            List<VehicleSerialResponse> serialDetails = serials.stream()
+                    .map(vs -> new VehicleSerialResponse(
+                            vs.getVin(),
+                            vs.getStatus(),
+                            vs.getHoldUntil()
+                    ))
+                    .toList();
+
+            // 3. Gán vào trường 'serials' mới (thay vì 'vins')
+            r.setSerials(serialDetails);
+
             return r;
         }).toList());
+        // --- KẾT THÚC THAY ĐỔI ---
+
         return res;
     }
 
     @Override
     public List<WarehouseResponse> getAll() {
+        // ... (Hàm này không cần thay đổi vì nó không hiển thị VIN)
         List<Warehouse> headers = warehouseRepo.findAllHeaders();
         return headers.stream().map(w -> {
             var flats = stockRepo.findFlatByWarehouseId(w.getWarehouseId());
@@ -136,7 +155,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         int oldQty = stock.getQuantity();
         int newQty = request.getQuantity();
-        int delta  = newQty - oldQty;
+        int delta = newQty - oldQty;
 
         // 1) cập nhật số lượng
         stock.setQuantity(newQty);
@@ -148,11 +167,11 @@ public class WarehouseServiceImpl implements WarehouseService {
                     model.getModelId(), wh.getWarehouseId());
 
             String colorLetter = vinGenerator.colorToLetter(model.getColor());
-            int year          = model.getProductionYear();
-            Long vehicleId    = ev.getVehicleId();
+            int year = model.getProductionYear();
+            Long vehicleId = ev.getVehicleId();
 
             for (int i = 1; i <= delta; i++) {
-                int seq   = startSeq + i;
+                int seq = startSeq + i;
                 String vin = vinGenerator.buildVin(year, vehicleId, colorLetter, seq);
 
                 VehicleSerial vs = new VehicleSerial();

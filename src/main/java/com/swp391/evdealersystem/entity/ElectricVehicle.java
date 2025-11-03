@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,8 +16,7 @@ import java.util.List;
                 @UniqueConstraint(name = "ux_ev_model", columnNames = "model_id")
         },
         indexes = {
-                @Index(name = "idx_ev_status", columnList = "status"),
-                @Index(name = "idx_ev_hold_until", columnList = "hold_until")
+                @Index(name = "idx_ev_status", columnList = "status")
         })
 @Getter
 @Setter
@@ -54,15 +52,12 @@ public class ElectricVehicle {
     @Column(name = "status", nullable = false, length = 20)
     private VehicleStatus status = VehicleStatus.AVAILABLE;
 
-    @Column(name = "hold_until")
-    private OffsetDateTime holdUntil;
-
     @Transient
     public boolean isSelectableNow() {
-        if (status == VehicleStatus.SOLD_OUT) return false;
-        if (status == VehicleStatus.HOLD && holdUntil != null) {
-            return OffsetDateTime.now().isAfter(holdUntil);
+        if (status == VehicleStatus.SOLD_OUT) {
+            return false;
+        } else {
+            return status == VehicleStatus.AVAILABLE;
         }
-        return status == VehicleStatus.AVAILABLE;
     }
 }
