@@ -1,14 +1,15 @@
 package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.service.VNPAYService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.;import java.util.HashMap;
+import lombok.Data;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.Map;
 
-
+@Data
 @RestController
 @RequestMapping("/api/vnpay")
-@RequiredArgsConstructor
 public class VnpayController {
 
     private final VNPAYService vnpayService;

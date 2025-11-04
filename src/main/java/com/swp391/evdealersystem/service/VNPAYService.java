@@ -13,13 +13,13 @@ import java.util.*;
 @Service
 public class VNPAYService {
 
-    @Value("${vnpay.tmnCode}")    private String vnp_TmnCode;      // 2EMR4UXR
-    @Value("${vnpay.hashSecret}") private String vnp_HashSecret;   // EP9ZR4FD8ENYF2RPQ7NI38YK1PUR58VY
-    @Value("${vnpay.url}")        private String vnp_Url;          // https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    @Value("${vnpay.tmnCode}")    private String vnp_TmnCode;
+    @Value("${vnpay.hashSecret}") private String vnp_HashSecret;
+    @Value("${vnpay.url}")        private String vnp_Url;
     @Value("${vnpay.returnUrl}")  private String vnp_ReturnUrl;
 
     public String createPaymentUrl(long amount, String bankCode, String orderInfo) {
-        long vnpAmount = amount * 100L; // VND x 100
+        long vnpAmount = amount * 100L;
 
         String vnp_TxnRef = String.valueOf(System.currentTimeMillis());
         String vnp_IpAddr = "127.0.0.1";

@@ -10,7 +10,6 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "vehicle_serial",
         indexes = {
-                @Index(name = "idx_vs_model", columnList = "model_id"),
                 @Index(name = "idx_vs_wh", columnList = "warehouse_id"),
                 @Index(name = "idx_vs_status", columnList = "status"),
                 @Index(name = "idx_vs_hold_until", columnList = "hold_until")
@@ -42,7 +41,7 @@ public class VehicleSerial {
     private String vin;
 
     @Column(name = "color_code", length = 8, nullable = false)
-    private String colorCode; // R, B, G, W,...
+    private String colorCode;
 
     @Column(name = "seq_no", nullable = false)
     private Integer seqNo;

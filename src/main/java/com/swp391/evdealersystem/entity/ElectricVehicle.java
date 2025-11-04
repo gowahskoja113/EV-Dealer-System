@@ -26,9 +26,6 @@ public class ElectricVehicle {
     @Column(name = "vehicle_id")
     private Long vehicleId;
 
-    @Column(name = "vin", length = 64, unique = true)
-    private String vin;
-
     @Column(nullable = false, precision = 18, scale = 2)
     private BigDecimal cost;
 
@@ -42,8 +39,8 @@ public class ElectricVehicle {
     @JoinColumn(name = "model_id", nullable = false)
     private Model model;
 
-    @OneToMany(mappedBy = "vehicle", orphanRemoval = false)
-    private List<Order> orders = new ArrayList<>();
+    @OneToMany(mappedBy = "vehicle", fetch = FetchType.LAZY)
+    private List<VehicleSerial> serials = new ArrayList<>();
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
