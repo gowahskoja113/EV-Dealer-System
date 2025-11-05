@@ -7,6 +7,8 @@ import com.swp391.evdealersystem.dto.response.WarehouseResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseStockFlat;
 import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
 import com.swp391.evdealersystem.entity.*;
+import com.swp391.evdealersystem.enums.QtyMode;
+import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.WarehouseMapper;
 import com.swp391.evdealersystem.repository.*;
 import com.swp391.evdealersystem.util.VinGenerator;
@@ -143,7 +145,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         ElectricVehicle ev = vehicleRepo.findByModel_ModelCode(request.getModelCode())
                 .orElseThrow(() -> new IllegalStateException("Chưa tạo xe đại diện cho model " + request.getModelCode()));
 
-        // Tìm/khởi tạo stock (không cần chạm wh.getStocks())
+        // lấy/khởi tạo stock
         WarehouseStock stock = stockRepo.findByWarehouseAndModel(wh, model)
                 .orElseGet(() -> {
                     WarehouseStock s = new WarehouseStock();
@@ -154,14 +156,32 @@ public class WarehouseServiceImpl implements WarehouseService {
                 });
 
         int oldQty = stock.getQuantity();
-        int newQty = request.getQuantity();
-        int delta = newQty - oldQty;
+        int reqQty = request.getQuantity();
+        int delta;
 
-        // 1) cập nhật số lượng
-        stock.setQuantity(newQty);
+        // ---- TÍNH DELTA THEO MODE ----
+        QtyMode mode = request.getMode() == null ? QtyMode.INCREMENT : request.getMode();
+        switch (mode) {
+            case SET -> {
+                delta = reqQty - oldQty;
+                stock.setQuantity(reqQty);
+            }
+            case INCREMENT -> {
+                if (reqQty <= 0) throw new IllegalArgumentException("quantity must be > 0 (INCREMENT)");
+                delta = reqQty;
+                stock.setQuantity(oldQty + reqQty);
+            }
+            case DECREMENT -> {
+                if (reqQty <= 0) throw new IllegalArgumentException("quantity phải > 0 (DECREMENT)");
+                if (oldQty < reqQty) throw new IllegalArgumentException("can not decrement more than current stock");
+                delta = -reqQty;
+                stock.setQuantity(oldQty - reqQty);
+            }
+            default -> throw new IllegalArgumentException("Unsupported QtyMode");
+        }
         stockRepo.save(stock);
 
-        // 2) đồng bộ VIN theo delta
+        // ---- ĐỒNG BỘ VIN THEO DELTA ----
         if (delta > 0) {
             int startSeq = vehicleSerialRepository.findMaxSeqNoByModelAndWarehouse(
                     model.getModelId(), wh.getWarehouseId());
@@ -181,24 +201,26 @@ public class WarehouseServiceImpl implements WarehouseService {
                 vs.setSeqNo(seq);
                 vs.setColorCode(colorLetter);
                 vs.setVin(vin);
+                // nếu có enum VehicleStatus trong code bạn:
+                vs.setStatus(VehicleStatus.AVAILABLE);
                 vehicleSerialRepository.save(vs);
             }
         } else if (delta < 0) {
             int needRemove = -delta;
             var lastSerials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
-                            model.getModelId(), wh.getWarehouseId(), PageRequest.of(0, needRemove));
+                            model.getModelId(), wh.getWarehouseId(), org.springframework.data.domain.PageRequest.of(0, needRemove));
+            // chỉ nên xóa những chiếc còn AVAILABLE/HOLD hết hạn; tránh xóa SOLD_OUT
             vehicleSerialRepository.deleteAll(lastSerials);
         }
 
-        // 3) tổng số trong kho (không dựa vào wh.getStocks)
         int total = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
         wh.setVehicleQuantity(total);
         warehouseRepo.save(wh);
 
-        // 4) trả response bằng projection + gắn VIN theo modelId
         return getById(warehouseId);
     }
+
 
     @Override
     @Transactional

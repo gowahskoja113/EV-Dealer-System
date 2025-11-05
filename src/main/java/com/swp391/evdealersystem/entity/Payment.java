@@ -7,64 +7,40 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
-@Entity
-@Table(name = "payment",
-        indexes = {
-                @Index(name = "idx_payment_order", columnList = "order_id"),
-                @Index(name = "idx_payment_status", columnList = "status"),
-                @Index(name = "idx_payment_txnref", columnList = "vnpTxnRef", unique = true)
-        })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="payment")
+@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payment_id")
-    private Long paymentId;
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id",
-            foreignKey = @ForeignKey(name = "fk_payment_order"))
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(nullable = false, precision = 18, scale = 2)
+    @Column(precision = 18, scale = 2, nullable = false)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
-    private PaymentPurpose purpose; // DEPOSIT | BALANCE
+    @Column(length = 20, nullable = false)
+    private PaymentStatus status;     // PENDING, SUCCESS, FAILED
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private PaymentMethod paymentMethod; // VNPAY
+    @Column(length = 20, nullable = false)
+    private PaymentPurpose type;         // DEPOSIT or REMAINING
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private PaymentStatus status; // PENDING|PAID|FAILED|CANCELED
+    @Column(length = 20, nullable = false)
+    private PaymentMethod method;     // CASH, VNPAY
 
-    // VNPay fields
-    @Column(length = 50, unique = true)
-    private String vnpTxnRef;             // mã tham chiếu gửi lên VNPay
+    @Column(length = 50, unique = false)
+    private String transactionRef;    // với CASH có thể null
 
-    @Column(length = 50)
-    private String vnpTransactionNo;      // mã giao dịch VNPAY
+    private LocalDateTime paymentDate;
 
-    @Column(length = 20)
-    private String vnpResponseCode;       // vnp_ResponseCode
-
-    @Column(length = 20)
-    private String vnpTransactionStatus;  // vnp_TransactionStatus
-
-    @Column(length = 20)
-    private String bankCode;              // vnp_BankCode
-
-    @Column(length = 64)
-    private String bankTranNo;            // vnp_BankTranNo
-
-    @Column(length = 2048)
-    private String payUrl;                // URL redirect thanh toán (đã ký)
-
-    private OffsetDateTime createdAt;     // khi tạo yêu cầu
-    private OffsetDateTime paidAt;        // khi thanh toán thành công
+    @Column(length = 255)
+    private String message;
 }

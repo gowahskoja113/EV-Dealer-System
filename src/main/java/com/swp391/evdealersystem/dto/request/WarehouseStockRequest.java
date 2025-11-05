@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.dto.request;
 
+import com.swp391.evdealersystem.enums.QtyMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,5 +16,7 @@ public class WarehouseStockRequest {
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be >= 0")
     private Integer quantity;
+
+    private QtyMode mode = QtyMode.INCREMENT;
 }
 

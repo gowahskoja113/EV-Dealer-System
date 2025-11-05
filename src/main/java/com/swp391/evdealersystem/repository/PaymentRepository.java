@@ -9,9 +9,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    Optional<Payment> findByVnpTxnRef(String vnpTxnRef);
-    Optional<Payment> findTopByOrder_OrderIdAndPurposeAndStatusOrderByPaidAtDesc(
-            Long orderId, PaymentPurpose purpose, PaymentStatus status);
-    List<Payment> findByOrder_OrderIdOrderByCreatedAtDesc(Long orderId);
-
+    List<Payment> findByOrder_OrderId(Long orderId);;
 }

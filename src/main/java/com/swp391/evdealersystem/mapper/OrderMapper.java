@@ -3,7 +3,6 @@ package com.swp391.evdealersystem.mapper;
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
-import com.swp391.evdealersystem.entity.Model;
 import com.swp391.evdealersystem.entity.Order;
 import org.springframework.stereotype.Component;
 

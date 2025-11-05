@@ -32,4 +32,21 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     boolean existsBySerial_VinAndStatus(String vin, OrderStatus status);
 
+    @EntityGraph(attributePaths = {"customer", "serial", "serial.vehicle", "serial.vehicle.model"})
+    @Query("""
+        SELECT o FROM Order o
+        LEFT JOIN FETCH o.customer c
+        LEFT JOIN FETCH o.serial s
+        LEFT JOIN FETCH s.vehicle v
+        LEFT JOIN FETCH v.model m
+        WHERE c.customerId = :customerId
+          AND o.depositAmount > 0
+          AND (o.status <> com.swp391.evdealersystem.enums.OrderStatus.CANCELED)
+          AND (:orderId IS NULL OR o.orderId = :orderId)
+        ORDER BY o.orderDate DESC, o.orderId DESC
+    """)
+    List<Order> findDepositedOrdersByCustomer(
+            @Param("customerId") Long customerId,
+            @Param("orderId") Long orderId
+    );
 }

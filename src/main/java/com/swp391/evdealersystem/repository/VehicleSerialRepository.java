@@ -1,11 +1,14 @@
 package com.swp391.evdealersystem.repository;
 
 import com.swp391.evdealersystem.entity.VehicleSerial;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Long> {
     List<VehicleSerial> findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(Long modelId, Long warehouseId);
@@ -18,4 +21,8 @@ public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Lo
 
     List<VehicleSerial> findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
             Long modelId, Long warehouseId, Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from VehicleSerial v where v.id = :id")
+    Optional<VehicleSerial> findByIdForUpdate(Long id);
 }

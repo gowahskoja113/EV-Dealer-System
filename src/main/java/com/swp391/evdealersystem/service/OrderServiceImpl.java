@@ -10,18 +10,17 @@ import com.swp391.evdealersystem.entity.Order;
 import com.swp391.evdealersystem.entity.VehicleSerial;
 import com.swp391.evdealersystem.enums.OrderPaymentStatus;
 import java.util.stream.Collectors;
+
+import com.swp391.evdealersystem.enums.OrderStatus;
 import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.OrderMapper;
-import com.swp391.evdealersystem.repository.CustomerRepository;
-import com.swp391.evdealersystem.repository.OrderRepository;
-import com.swp391.evdealersystem.repository.VehicleSerialRepository;
+import com.swp391.evdealersystem.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -32,6 +31,8 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerRepository customerRepo;
     private final VehicleSerialRepository serialRepo;
     private final OrderMapper mapper;
+    private final WarehouseStockRepository stockRepo;
+    private final WarehouseRepository warehouseRepo;
 
     private void validateDeposit(ElectricVehicle v, java.math.BigDecimal deposit) {
         if (v.getPrice() == null || v.getPrice().signum() < 0) {
@@ -48,28 +49,30 @@ public class OrderServiceImpl implements OrderService {
         Customer customer = customerRepo.findById(req.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + req.getCustomerId()));
 
-        VehicleSerial serial = serialRepo.findById(req.getVehicleSerialId())
+        VehicleSerial serial = serialRepo.findByIdForUpdate(req.getVehicleSerialId())
                 .orElseThrow(() -> new IllegalArgumentException("VehicleSerial not found: " + req.getVehicleSerialId()));
 
         if (orderRepo.existsBySerial_VinAndStatus(serial.getVin(), com.swp391.evdealersystem.enums.OrderStatus.PROCESSING)) {
             throw new IllegalStateException("This vehicle is already reserved by another processing order.");
         }
-
         if (!serial.isSelectableNow()) {
             throw new IllegalStateException("Vehicle " + serial.getVin() + " is not available (Status: " + serial.getStatus() + ")");
         }
+
         validateDeposit(serial.getVehicle(), req.getDepositAmount());
 
         serial.setStatus(VehicleStatus.HOLD);
-        serial.setHoldUntil(OffsetDateTime.now().plus(7, ChronoUnit.DAYS));
-        serialRepo.save(serial);
+        serial.setHoldUntil(OffsetDateTime.now().plusDays(30));
 
         Order order = Order.builder()
                 .customer(customer)
                 .serial(serial)
                 .orderDate(req.getOrderDate())
-                .depositAmount(req.getDepositAmount())
                 .currency("VND")
+                .status(com.swp391.evdealersystem.enums.OrderStatus.PROCESSING)
+                .paymentStatus(OrderPaymentStatus.UNPAID)
+                .plannedDepositAmount(req.getDepositAmount())
+                .depositAmount(java.math.BigDecimal.ZERO)
                 .build();
 
         order = orderRepo.save(order);
@@ -85,29 +88,56 @@ public class OrderServiceImpl implements OrderService {
         OrderPaymentStatus next = (req.getPaymentStatus() != null)
                 ? req.getPaymentStatus()
                 : OrderPaymentStatus.PAID;
-        order.setPaymentStatus(next);
 
         if (req.getDeliveryDate() != null) {
             order.setDeliveryDate(req.getDeliveryDate());
         }
 
-        //update status vehicle
         VehicleSerial serial = order.getSerial();
         if (serial != null) {
             switch (next) {
                 case PAID -> {
-                    serial.setStatus(VehicleStatus.SOLD_OUT);
-                    serial.setHoldUntil(null);
-                    serialRepo.save(serial);
+                    // >>> ADD THIS: nâng deposit lên bằng giá xe để remaining = 0
+                    var price = serial.getVehicle().getPrice();
+                    order.setDepositAmount(price);  // <-- dòng quan trọng
+
+                    if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
+                        serial.setStatus(VehicleStatus.SOLD_OUT);
+                        serial.setHoldUntil(null);
+                        serialRepo.save(serial);
+
+                        Long whId = serial.getWarehouse().getWarehouseId();
+                        Long modelId = serial.getModel().getModelId();
+
+                        var stock = stockRepo.findForUpdate(whId, modelId)
+                                .orElseThrow(() -> new IllegalStateException("Stock not found for warehouse/model"));
+                        if (stock.getQuantity() <= 0) {
+                            throw new IllegalStateException("Stock would go negative for model " + serial.getModel().getModelCode());
+                        }
+                        stock.setQuantity(stock.getQuantity() - 1);
+                        stockRepo.save(stock);
+
+                        int total = stockRepo.sumQuantityByWarehouseId(whId);
+                        var wh = serial.getWarehouse();
+                        wh.setVehicleQuantity(total);
+                        warehouseRepo.save(wh);
+                    }
+                    order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
                 }
                 case OVERDUE -> {
-                    serial.setStatus(VehicleStatus.AVAILABLE);
-                    serial.setHoldUntil(null);
-                    serialRepo.save(serial);
+                    // tuỳ policy, thường giữ nguyên deposit, trả VIN về AVAILABLE
+                    if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
+                        serial.setStatus(VehicleStatus.AVAILABLE);
+                        serial.setHoldUntil(null);
+                        serialRepo.save(serial);
+                    }
+                    order.setStatus(OrderStatus.CANCELED);
                 }
-                default -> { /* khong thay doi trang thai xe khi dang processing */ }
+                default -> { /* không đổi gì với VIN */ }
             }
         }
+
+        order.setPaymentStatus(next); // set sau khi tinh deposit
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
     }

@@ -8,15 +8,13 @@ import lombok.Setter;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "vehicle_serial",
-        indexes = {
-                @Index(name = "idx_vs_wh", columnList = "warehouse_id"),
-                @Index(name = "idx_vs_status", columnList = "status"),
-                @Index(name = "idx_vs_hold_until", columnList = "hold_until")
-        },
-        uniqueConstraints = {
-                @UniqueConstraint(name = "ux_vs_vin", columnNames = "vin")
-        })
+@Table(name = "vehicle_serial", uniqueConstraints = {
+        @UniqueConstraint(name = "ux_vs_vin", columnNames = "vin")
+}, indexes = {
+        @Index(name = "idx_vs_model", columnList = "model_id"),
+        @Index(name = "idx_vs_wh", columnList = "warehouse_id"),
+        @Index(name = "idx_vs_status", columnList = "status")
+})
 @Getter
 @Setter
 public class VehicleSerial {
@@ -47,7 +45,7 @@ public class VehicleSerial {
     private Integer seqNo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = true, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private VehicleStatus status = VehicleStatus.AVAILABLE;
 
     @Column(name = "hold_until")

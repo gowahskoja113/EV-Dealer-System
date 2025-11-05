@@ -35,7 +35,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = true, length = 20)
-    private OrderStatus status; // PROCESSING -> COMPLETED / CANCELED
+    private OrderStatus status;
 
     @Column(name = "deposit_amount", precision = 18, scale = 2)
     private BigDecimal depositAmount;
@@ -43,6 +43,9 @@ public class Order {
     // total - deposit
     @Column(name = "remaining_amount", precision = 18, scale = 2, nullable = true)
     private BigDecimal remainingAmount;
+
+    @Column(name = "planned_deposit_amount", precision = 18, scale = 2)
+    private BigDecimal plannedDepositAmount;
 
     // remaining status
     @Enumerated(EnumType.STRING)
@@ -78,13 +81,9 @@ public class Order {
                 : BigDecimal.ZERO;
 
         remainingAmount = maxZero(price.subtract(depositAmount));
+
+        if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
         if (status == null) status = OrderStatus.PROCESSING;
-
-        if (paymentStatus == null) {
-            paymentStatus = calcPaymentStatus(depositAmount, remainingAmount);
-        }
-
-        syncOrderStatusFromPayment();
         if (updatedAt == null) updatedAt = LocalDateTime.now();
     }
 
@@ -97,8 +96,23 @@ public class Order {
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
         remainingAmount = maxZero(price.subtract(depositAmount));
 
-        paymentStatus = calcPaymentStatus(depositAmount, remainingAmount);
-        syncOrderStatusFromPayment();
+        if (paymentStatus == null || paymentStatus == OrderPaymentStatus.UNPAID || paymentStatus == OrderPaymentStatus.DEPOSIT_PAID) {
+            if (remainingAmount.signum() == 0) {
+                paymentStatus = OrderPaymentStatus.PAID;
+                status = OrderStatus.COMPLETED;
+            } else {
+                // chỉ đánh DEPOSIT_PAID khi đã đạt cọc dự kiến
+                BigDecimal planned = plannedDepositAmount == null ? BigDecimal.ZERO : plannedDepositAmount;
+                if (planned.signum() > 0 && depositAmount.compareTo(planned) >= 0) {
+                    paymentStatus = OrderPaymentStatus.DEPOSIT_PAID;
+                } else {
+                    paymentStatus = OrderPaymentStatus.UNPAID;
+                }
+                if (status != OrderStatus.CANCELED) {
+                    status = OrderStatus.PROCESSING;
+                }
+            }
+        }
         updatedAt = LocalDateTime.now();
     }
 

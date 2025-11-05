@@ -4,7 +4,9 @@ import com.swp391.evdealersystem.dto.response.WarehouseStockFlat;
 import com.swp391.evdealersystem.entity.Model;
 import com.swp391.evdealersystem.entity.Warehouse;
 import com.swp391.evdealersystem.entity.WarehouseStock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -32,4 +34,12 @@ public interface WarehouseStockRepository extends JpaRepository<WarehouseStock, 
        where s.warehouse.warehouseId = :warehouseId
     """)
     Integer sumQuantityByWarehouseId(Long warehouseId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+       select s from WarehouseStock s
+       where s.warehouse.warehouseId = :warehouseId and s.model.modelId = :modelId
+    """)
+    Optional<WarehouseStock> findForUpdate(Long warehouseId, Long modelId);
+
 }

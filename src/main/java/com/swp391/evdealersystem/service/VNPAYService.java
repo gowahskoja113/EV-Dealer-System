@@ -39,7 +39,6 @@ public class VNPAYService {
         vnp.put("vnp_ReturnUrl", vnp_ReturnUrl);
         vnp.put("vnp_IpAddr", vnp_IpAddr);
         vnp.put("vnp_CreateDate", vnp_CreateDate);
-        // Có thể gửi type trên URL, nhưng KHÔNG đưa vào chuỗi ký
         vnp.put("vnp_SecureHashType", "HmacSHA512");
 
         if (bankCode != null && !bankCode.isBlank()) {
