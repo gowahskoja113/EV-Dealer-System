@@ -32,25 +32,30 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ai cũng gọi được register, login
-                        .requestMatchers("/api/auth/**").permitAll()
-                        //Swagger
+                        // Public endpoints
                         .requestMatchers(
+                                "/api/auth/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
-                                "/webjars/**"
+                                "/webjars/**",
+                                // ✅ MỞ quyền cho VNPay callback & start
+                                "/api/payments/vnpay/**"
                         ).permitAll()
-                        // còn lại (nếu có) thì cần xác thực
+                        // (Optional) cho preflight CORS nếu có FE gọi
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        // Các endpoint còn lại yêu cầu xác thực
                         .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
