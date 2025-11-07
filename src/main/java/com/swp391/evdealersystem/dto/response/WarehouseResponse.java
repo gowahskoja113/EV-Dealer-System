@@ -14,5 +14,6 @@ public class WarehouseResponse {
     private String warehouseLocation;
     private Integer vehicleQuantity;
     private String warehouseName;
+    private Integer maxCapacity;
     private List<WarehouseStockResponse> items;
 }

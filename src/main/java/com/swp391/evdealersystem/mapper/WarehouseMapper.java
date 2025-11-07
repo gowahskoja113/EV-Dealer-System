@@ -19,12 +19,18 @@ public class WarehouseMapper {
         w.setWarehouseLocation(req.getWarehouseLocation());
         w.setWarehouseName(req.getWarehouseName());
         w.setVehicleQuantity(0);
+        if (req.getMaxCapacity() != null) {
+            w.setMaxCapacity(req.getMaxCapacity());
+        }
         return w;
     }
 
     public void updateEntity(Warehouse w, WarehouseRequest req) {
         w.setWarehouseName(req.getWarehouseName());
         w.setWarehouseLocation(req.getWarehouseLocation());
+        if (req.getMaxCapacity() != null) {
+            w.setMaxCapacity(req.getMaxCapacity());
+        }
     }
 
     public WarehouseResponse toResponse(Warehouse w) {
@@ -41,6 +47,7 @@ public class WarehouseMapper {
         res.setWarehouseName(w.getWarehouseName());
         res.setWarehouseLocation(w.getWarehouseLocation());
         res.setVehicleQuantity(total);
+        res.setMaxCapacity(w.getMaxCapacity());
         res.setItems(items);
         return res;
     }
@@ -62,7 +69,6 @@ public class WarehouseMapper {
         r.setColor(m.getColor());
         r.setProductionYear(m.getProductionYear());
         r.setQuantity(s.getQuantity());
-        // r.setVehicles(...) sẽ được gán ở Service để tránh N+1
         return r;
     }
 }

@@ -16,6 +16,6 @@ public class VnPayConfig {
     private String currCode;
     private String locale;
     private String orderType;
-    private String version; // 2.1.0
-    private String command; // pay
+    private String version;
+    private String command;
 }

@@ -28,6 +28,9 @@ public class Warehouse {
     @Column(name = "vehicle_quantity", nullable = true)
     private Integer vehicleQuantity = 0;
 
+    @Column(name = "max_capacity")
+    private Integer maxCapacity = 20;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dealership_id", nullable = false) // Cột khóa ngoại trong bảng 'warehouse'
     @JsonIgnore

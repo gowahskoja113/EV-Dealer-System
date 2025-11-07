@@ -68,7 +68,8 @@ public class WarehouseServiceImpl implements WarehouseService {
         res.setWarehouseLocation(w.getWarehouseLocation());
         res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
 
-        // --- BẮT ĐẦU THAY ĐỔI ---
+        res.setMaxCapacity(w.getMaxCapacity());
+
         res.setItems(flats.stream().map(f -> {
             var r = new WarehouseStockResponse();
             r.setModelCode(f.modelCode());
@@ -76,13 +77,9 @@ public class WarehouseServiceImpl implements WarehouseService {
             r.setColor(f.color());
             r.setProductionYear(f.productionYear());
             r.setQuantity(f.quantity());
-
-            // 1. Lấy danh sách các đối tượng VehicleSerial (như cũ)
             var serials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(
                             f.modelId(), w.getWarehouseId());
-
-            // 2. Chuyển đổi List<VehicleSerial> sang List<VehicleSerialResponse>
             List<VehicleSerialResponse> serialDetails = serials.stream()
                     .map(vs -> new VehicleSerialResponse(
                             vs.getVin(),
@@ -90,20 +87,15 @@ public class WarehouseServiceImpl implements WarehouseService {
                             vs.getHoldUntil()
                     ))
                     .toList();
-
-            // 3. Gán vào trường 'serials' mới (thay vì 'vins')
             r.setSerials(serialDetails);
-
             return r;
         }).toList());
-        // --- KẾT THÚC THAY ĐỔI ---
 
         return res;
     }
 
     @Override
     public List<WarehouseResponse> getAll() {
-        // ... (Hàm này không cần thay đổi vì nó không hiển thị VIN)
         List<Warehouse> headers = warehouseRepo.findAllHeaders();
         return headers.stream().map(w -> {
             var flats = stockRepo.findFlatByWarehouseId(w.getWarehouseId());
@@ -112,6 +104,8 @@ public class WarehouseServiceImpl implements WarehouseService {
             res.setWarehouseName(w.getWarehouseName());
             res.setWarehouseLocation(w.getWarehouseLocation());
             res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
+            res.setMaxCapacity(w.getMaxCapacity());
+
             res.setItems(flats.stream().map(f -> {
                 var r = new WarehouseStockResponse();
                 r.setModelCode(f.modelCode());
@@ -193,7 +187,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         }
 
         // === START: KIỂM TRA GIỚI HẠN 20 XE ===
-        final int WAREHOUSE_CAPACITY_LIMIT = 20;
+        final int WAREHOUSE_CAPACITY_LIMIT = wh.getMaxCapacity();
 
         // 1. Lấy tổng số lượng hiện tại của TẤT CẢ các model trong kho
         int currentTotal = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
@@ -204,13 +198,12 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         if (projectedTotal > WAREHOUSE_CAPACITY_LIMIT) {
             throw new IllegalArgumentException(
-                    "Warehouse capacity exceeded. Limit is " + WAREHOUSE_CAPACITY_LIMIT +
+                    "Warehouse capacity exceeded. Limit for this warehouse is " + WAREHOUSE_CAPACITY_LIMIT +
                             ". Current (other models): " + (currentTotal - oldQty) +
                             ", Trying to set this model to: " + newQty +
                             ", Projected Total: " + projectedTotal
             );
         }
-        // === END: KIỂM TRA GIỚI HẠN 20 XE ===
 
         // Cập nhật số lượng cho stock này
         stock.setQuantity(newQty);

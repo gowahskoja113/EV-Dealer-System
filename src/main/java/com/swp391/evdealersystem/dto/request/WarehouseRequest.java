@@ -1,7 +1,8 @@
 package com.swp391.evdealersystem.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull; // <-- Import thêm
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,8 +17,9 @@ public class WarehouseRequest {
     @Size(max = 100, message = "Warehouse name cannot exceed 100 characters")
     private String warehouseName;
 
-    // === THÊM TRƯỜNG NÀY ===
+    @Min(value = 1, message = "Sức chứa tối đa phải ít nhất là 1")
+    private Integer maxCapacity;
+
     @NotNull(message = "Dealership ID is required")
     private Long dealershipId;
-    // ========================
 }
