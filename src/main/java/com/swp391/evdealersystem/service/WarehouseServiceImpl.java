@@ -31,6 +31,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final ModelRepository modelRepository;
     private final VehicleSerialRepository vehicleSerialRepository;
     private final VinGenerator vinGenerator;
+    private final DealershipRepository dealershipRepository;
 
     @Override
     @Transactional
@@ -38,7 +39,17 @@ public class WarehouseServiceImpl implements WarehouseService {
         if (warehouseRepo.existsByWarehouseLocation(request.getWarehouseLocation())) {
             throw new IllegalArgumentException("Warehouse location already exists");
         }
+        // 1. Tìm Dealership
+        Dealership dealership = dealershipRepository.findById(request.getDealershipId())
+                .orElseThrow(() -> new EntityNotFoundException("Dealership not found with ID: " + request.getDealershipId()));
+
+        // 2. Chuyển đổi DTO sang Entity (như cũ)
         Warehouse warehouse = mapper.toEntity(request);
+
+        // 3. Gán quan hệ
+        warehouse.setDealership(dealership); // <-- Đây là bước quan trọng nhất
+
+        // 4. Lưu và trả về (như cũ)
         Warehouse saved = warehouseRepo.save(warehouse);
         return mapper.toResponse(saved);
     }
@@ -155,37 +166,61 @@ public class WarehouseServiceImpl implements WarehouseService {
                     return s;
                 });
 
-        int oldQty = stock.getQuantity();
+        int oldQty = stock.getQuantity(); // Số lượng cũ của model này
         int reqQty = request.getQuantity();
         int delta;
+        int newQty; // Số lượng mới của model này
 
-        // ---- TÍNH DELTA THEO MODE ----
+        // ---- TÍNH NEW QTY THEO MODE ----
         QtyMode mode = request.getMode() == null ? QtyMode.INCREMENT : request.getMode();
         switch (mode) {
             case SET -> {
+                newQty = reqQty;
                 delta = reqQty - oldQty;
-                stock.setQuantity(reqQty);
             }
             case INCREMENT -> {
                 if (reqQty <= 0) throw new IllegalArgumentException("quantity must be > 0 (INCREMENT)");
+                newQty = oldQty + reqQty;
                 delta = reqQty;
-                stock.setQuantity(oldQty + reqQty);
             }
             case DECREMENT -> {
                 if (reqQty <= 0) throw new IllegalArgumentException("quantity phải > 0 (DECREMENT)");
                 if (oldQty < reqQty) throw new IllegalArgumentException("can not decrement more than current stock");
+                newQty = oldQty - reqQty;
                 delta = -reqQty;
-                stock.setQuantity(oldQty - reqQty);
             }
             default -> throw new IllegalArgumentException("Unsupported QtyMode");
         }
+
+        // === START: KIỂM TRA GIỚI HẠN 20 XE ===
+        final int WAREHOUSE_CAPACITY_LIMIT = 20;
+
+        // 1. Lấy tổng số lượng hiện tại của TẤT CẢ các model trong kho
+        int currentTotal = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
+
+        // 2. Tính tổng dự kiến
+        // (tổng hiện tại - số lượng cũ của model này + số lượng mới của model này)
+        int projectedTotal = (currentTotal - oldQty) + newQty;
+
+        if (projectedTotal > WAREHOUSE_CAPACITY_LIMIT) {
+            throw new IllegalArgumentException(
+                    "Warehouse capacity exceeded. Limit is " + WAREHOUSE_CAPACITY_LIMIT +
+                            ". Current (other models): " + (currentTotal - oldQty) +
+                            ", Trying to set this model to: " + newQty +
+                            ", Projected Total: " + projectedTotal
+            );
+        }
+        // === END: KIỂM TRA GIỚI HẠN 20 XE ===
+
+        // Cập nhật số lượng cho stock này
+        stock.setQuantity(newQty);
         stockRepo.save(stock);
 
         // ---- ĐỒNG BỘ VIN THEO DELTA ----
         if (delta > 0) {
+            // ... (Logic tạo VIN của bạn giữ nguyên) ...
             int startSeq = vehicleSerialRepository.findMaxSeqNoByModelAndWarehouse(
                     model.getModelId(), wh.getWarehouseId());
-
             String colorLetter = vinGenerator.colorToLetter(model.getColor());
             int year = model.getProductionYear();
             Long vehicleId = ev.getVehicleId();
@@ -193,7 +228,6 @@ public class WarehouseServiceImpl implements WarehouseService {
             for (int i = 1; i <= delta; i++) {
                 int seq = startSeq + i;
                 String vin = vinGenerator.buildVin(year, vehicleId, colorLetter, seq);
-
                 VehicleSerial vs = new VehicleSerial();
                 vs.setVehicle(ev);
                 vs.setModel(model);
@@ -201,21 +235,20 @@ public class WarehouseServiceImpl implements WarehouseService {
                 vs.setSeqNo(seq);
                 vs.setColorCode(colorLetter);
                 vs.setVin(vin);
-                // nếu có enum VehicleStatus trong code bạn:
                 vs.setStatus(VehicleStatus.AVAILABLE);
                 vehicleSerialRepository.save(vs);
             }
         } else if (delta < 0) {
+            // ... (Logic xóa VIN của bạn giữ nguyên) ...
             int needRemove = -delta;
             var lastSerials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
-                            model.getModelId(), wh.getWarehouseId(), org.springframework.data.domain.PageRequest.of(0, needRemove));
-            // chỉ nên xóa những chiếc còn AVAILABLE/HOLD hết hạn; tránh xóa SOLD_OUT
+                            model.getModelId(), wh.getWarehouseId(), PageRequest.of(0, needRemove));
             vehicleSerialRepository.deleteAll(lastSerials);
         }
 
-        int total = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
-        wh.setVehicleQuantity(total);
+        // Cập nhật tổng số lượng của Warehouse (dùng luôn số đã tính cho tối ưu)
+        wh.setVehicleQuantity(projectedTotal);
         warehouseRepo.save(wh);
 
         return getById(warehouseId);
