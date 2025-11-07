@@ -48,6 +48,7 @@ public class WarehouseMapper {
         res.setWarehouseLocation(w.getWarehouseLocation());
         res.setVehicleQuantity(total);
         res.setMaxCapacity(w.getMaxCapacity());
+        res.setDealershipId(w.getWarehouseId());
         res.setItems(items);
         return res;
     }

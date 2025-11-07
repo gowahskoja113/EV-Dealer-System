@@ -66,6 +66,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         res.setWarehouseId(w.getWarehouseId());
         res.setWarehouseName(w.getWarehouseName());
         res.setWarehouseLocation(w.getWarehouseLocation());
+        res.setDealershipId(w.getDealership().getDealershipId());
         res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
 
         res.setMaxCapacity(w.getMaxCapacity());
@@ -103,6 +104,7 @@ public class WarehouseServiceImpl implements WarehouseService {
             res.setWarehouseId(w.getWarehouseId());
             res.setWarehouseName(w.getWarehouseName());
             res.setWarehouseLocation(w.getWarehouseLocation());
+            res.setDealershipId(w.getDealership().getDealershipId());
             res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
             res.setMaxCapacity(w.getMaxCapacity());
 

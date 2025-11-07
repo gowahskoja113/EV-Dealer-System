@@ -15,5 +15,6 @@ public class WarehouseResponse {
     private Integer vehicleQuantity;
     private String warehouseName;
     private Integer maxCapacity;
+    private Long dealershipId;
     private List<WarehouseStockResponse> items;
 }
