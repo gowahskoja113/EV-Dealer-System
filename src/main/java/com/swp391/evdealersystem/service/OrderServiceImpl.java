@@ -38,9 +38,9 @@ public class OrderServiceImpl implements OrderService {
         if (v.getPrice() == null || v.getPrice().signum() < 0) {
             throw new IllegalArgumentException("vehicle.price must be >= 0");
         }
-            if (deposit == null || deposit.signum() < 0 || deposit.compareTo(v.getPrice()) > 0) {
-                throw new IllegalArgumentException("depositAmount must be between 0 and vehicle.price");
-            }
+        if (deposit == null || deposit.signum() < 0 || deposit.compareTo(v.getPrice()) > 0) {
+            throw new IllegalArgumentException("depositAmount must be between 0 and vehicle.price");
+        }
     }
 
     @Transactional
@@ -49,8 +49,8 @@ public class OrderServiceImpl implements OrderService {
         Customer customer = customerRepo.findById(req.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + req.getCustomerId()));
 
-        VehicleSerial serial = serialRepo.findByIdForUpdate(req.getVehicleSerialId())
-                .orElseThrow(() -> new IllegalArgumentException("VehicleSerial not found: " + req.getVehicleSerialId()));
+        VehicleSerial serial = serialRepo.findByVinForUpdate(req.getVin())
+                .orElseThrow(() -> new IllegalArgumentException("VehicleSerial not found with VIN: " + req.getVin()));
 
         if (orderRepo.existsBySerial_VinAndStatus(serial.getVin(), com.swp391.evdealersystem.enums.OrderStatus.PROCESSING)) {
             throw new IllegalStateException("This vehicle is already reserved by another processing order.");

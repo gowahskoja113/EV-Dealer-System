@@ -26,7 +26,6 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    // ===== Helpers =====
     private ResponseEntity<Object> build(HttpServletRequest req, ErrorCode code, String message, Map<String,String> details) {
         ApiError body = new ApiError(code, message);
         body.setPath(req != null ? req.getRequestURI() : null);
@@ -44,13 +43,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return null;
     }
 
-    // ===== App-defined exceptions =====
     @ExceptionHandler(BaseException.class)
     protected ResponseEntity<Object> handleBase(HttpServletRequest req, BaseException ex) {
         return build(req, ex.getErrorCode(), ex.getMessage());
     }
 
-    // ===== Validation (@Valid body) =====
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers,
@@ -73,7 +70,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(req, ErrorCode.VALIDATION_FAILED, ErrorCode.VALIDATION_FAILED.getDefaultMessage(), details);
     }
 
-    // ===== Common Spring errors =====
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers,

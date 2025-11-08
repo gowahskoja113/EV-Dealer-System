@@ -13,8 +13,8 @@ public class OrderDepositRequest {
     @NotNull
     private Long customerId;
 
-    @NotNull
-    private Long vehicleSerialId;
+    @NotBlank(message = "VIN cannot be blank")
+    private String vin;
 
     @NotNull
     @DecimalMin(value = "0.00")
