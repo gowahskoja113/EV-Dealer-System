@@ -12,9 +12,6 @@ import lombok.*;
 @Builder
 public class CustomerRequest {
 
-    @NotNull(message = "Vehicle ID is required")
-    private Long vehicleId;
-
     @NotBlank(message = "Name is required")
     @Size(max = 120, message = "Name cannot exceed 120 characters")
     private String name;
@@ -24,7 +21,10 @@ public class CustomerRequest {
     private String phoneNumber;
 
     @Size(max = 255, message = "Interest vehicle info too long")
-    private String interestVehicle;
+    private String address;
+
+    @Size(max = 255, message = "Note cannot exceed 255 characters")
+    private String note;
 
     @NotNull(message = "Status is required")
     private CustomerStatus status;

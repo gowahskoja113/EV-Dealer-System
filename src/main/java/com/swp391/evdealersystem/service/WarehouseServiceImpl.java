@@ -251,7 +251,6 @@ public class WarehouseServiceImpl implements WarehouseService {
         return getById(warehouseId);
     }
 
-
     @Override
     @Transactional
     public WarehouseResponse removeStock(Long warehouseId, String modelCode) {

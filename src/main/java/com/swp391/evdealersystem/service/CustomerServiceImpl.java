@@ -28,8 +28,6 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponse createCustomer(CustomerRequest request) {
-        ElectricVehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found with ID: " + request.getVehicleId()));
 
         if (customerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new RuntimeException("Phone number already exists: " + request.getPhoneNumber());
@@ -41,7 +39,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .orElseThrow(() -> new RuntimeException("Assigned sales not found with ID: " + request.getAssignedSalesId()));
         }
 
-        Customer customer = customerMapper.toEntity(request, vehicle, assigned);
+        Customer customer = customerMapper.toEntity(request, assigned);
         Customer saved = customerRepository.save(customer);
         return customerMapper.toResponse(saved);
     }
@@ -51,13 +49,10 @@ public class CustomerServiceImpl implements CustomerService {
         Customer existing = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + id));
 
-        ElectricVehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found with ID: " + request.getVehicleId()));
-
-        existing.setVehicle(vehicle);
         existing.setName(request.getName());
         existing.setPhoneNumber(request.getPhoneNumber());
-        existing.setInterestVehicle(request.getInterestVehicle());
+        existing.setAddress(request.getAddress());
+        existing.setNote(request.getNote());
         existing.setStatus(request.getStatus());
 
         Customer updated = customerRepository.save(existing);

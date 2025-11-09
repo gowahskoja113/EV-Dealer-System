@@ -11,13 +11,11 @@ import lombok.*;
 public class CustomerResponse {
 
     private Long customerId;
-    private Long vehicleId;
-    private String vehicleModel;
     private String name;
     private String phoneNumber;
-    private String interestVehicle;
+    private String address;
+    private String note;
     private CustomerStatus status;
     private Long assignedSalesId;
     private String assignedSalesName;
-
 }

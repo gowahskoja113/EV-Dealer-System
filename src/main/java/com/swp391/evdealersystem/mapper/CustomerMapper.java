@@ -11,14 +11,13 @@ import org.springframework.stereotype.Component;
 public class CustomerMapper {
 
     public Customer toEntity(CustomerRequest request,
-                             ElectricVehicle vehicle,
                              User assignedSales) {
-        if (request == null || vehicle == null) return null;
+        if (request == null) return null;
         Customer entity = new Customer();
-        entity.setVehicle(vehicle);
         entity.setName(request.getName());
         entity.setPhoneNumber(request.getPhoneNumber());
-        entity.setInterestVehicle(request.getInterestVehicle());
+        entity.setAddress(request.getAddress());
+        entity.setNote(request.getNote());
         entity.setStatus(request.getStatus());
         entity.setAssignedSales(assignedSales);
         return entity;
@@ -26,13 +25,12 @@ public class CustomerMapper {
 
     public void updateEntity(Customer entity,
                              CustomerRequest request,
-                             ElectricVehicle vehicle,
                              User assignedSales) {
         if (entity == null || request == null) return;
-        if (vehicle != null) entity.setVehicle(vehicle);
         entity.setName(request.getName());
         entity.setPhoneNumber(request.getPhoneNumber());
-        entity.setInterestVehicle(request.getInterestVehicle());
+        entity.setAddress(request.getAddress());
+        entity.setNote(request.getNote());
         entity.setStatus(request.getStatus());
         entity.setAssignedSales(assignedSales);
     }
@@ -40,14 +38,6 @@ public class CustomerMapper {
 
     public CustomerResponse toResponse(Customer entity) {
         if (entity == null) return null;
-
-        String vehicleModelStr = null;
-        if (entity.getVehicle() != null && entity.getVehicle().getModel() != null) {
-            var m = entity.getVehicle().getModel();
-            String code  = m.getModelCode() != null ? m.getModelCode().trim() : "";
-            vehicleModelStr = code.trim();
-            if (vehicleModelStr.isEmpty()) vehicleModelStr = null;
-        }
 
         Long assignedSalesId = null;
         String assignedSalesName = null;
@@ -63,16 +53,13 @@ public class CustomerMapper {
 
         return CustomerResponse.builder()
                 .customerId(entity.getCustomerId())
-                .vehicleId(entity.getVehicle() != null ? entity.getVehicle().getVehicleId() : null)
-                .vehicleModel(vehicleModelStr)
                 .name(entity.getName())
                 .phoneNumber(entity.getPhoneNumber())
-                .interestVehicle(entity.getInterestVehicle())
+                .address(entity.getAddress())
+                .note(entity.getNote())
                 .status(entity.getStatus())
                 .assignedSalesId(assignedSalesId)
                 .assignedSalesName(assignedSalesName)
                 .build();
     }
-
-
 }

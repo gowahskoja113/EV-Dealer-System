@@ -71,10 +71,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Cập nhật số tiền đã TRẢ (depositAmount)
         BigDecimal newDeposit = deposit.add(paid);
-        if (newDeposit.compareTo(price) > 0) newDeposit = price; // chặn overpay
+        if (newDeposit.compareTo(price) > 0) newDeposit = price;
         order.setDepositAmount(newDeposit);
 
-        // Tính trạng thái theo NGHIỆP VỤ:
         boolean fullyPaid = newDeposit.compareTo(price) >= 0;
         BigDecimal planned = order.getPlannedDepositAmount() == null ? BigDecimal.ZERO : order.getPlannedDepositAmount();
 
