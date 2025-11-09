@@ -219,10 +219,12 @@ public class WarehouseServiceImpl implements WarehouseService {
             String colorLetter = vinGenerator.colorToLetter(model.getColor());
             int year = model.getProductionYear();
             Long vehicleId = ev.getVehicleId();
+            long dealerShipId = wh.getDealership().getDealershipId();
+            warehouseId = wh.getWarehouseId();
 
             for (int i = 1; i <= delta; i++) {
                 int seq = startSeq + i;
-                String vin = vinGenerator.buildVin(year, vehicleId, colorLetter, seq);
+                String vin = vinGenerator.buildVin(year, dealerShipId, warehouseId, vehicleId, colorLetter, seq);
                 VehicleSerial vs = new VehicleSerial();
                 vs.setVehicle(ev);
                 vs.setModel(model);

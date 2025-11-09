@@ -61,8 +61,8 @@ public class PaymentServiceImpl implements PaymentService {
         Payment pay = Payment.builder()
                 .order(order)
                 .amount(paid)
-                .status(PaymentStatus.PAID)      // bạn đang dùng enum này
-                .type(applyTo)                   // PaymentPurpose.DEPOSIT/REMAINING
+                .status(PaymentStatus.PAID)
+                .type(applyTo)
                 .method(PaymentMethod.CASH)
                 .paymentDate(LocalDateTime.now())
                 .message(req.getNote())
@@ -142,7 +142,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (toPay.signum() <= 0) {
                 throw new IllegalStateException("Planned deposit already satisfied.");
             }
-        } else { // REMAINING
+        } else {
             toPay = price.subtract(deposit);
             if (toPay.signum() <= 0) {
                 throw new IllegalStateException("Order is already fully paid.");
@@ -162,7 +162,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepo.save(p);
 
         String url = vnpayService.createPaymentUrl(
-                toPay.longValueExact(),                // VND
+                toPay.longValueExact(),
                 req.bankCode(),
                 order.getOrderId(),
                 p.getId(),

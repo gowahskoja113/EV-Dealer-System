@@ -18,8 +18,8 @@ public class DepositOrderView {
 
     private String vin;
     private Long vehicleId;
-    private String vehicleModel; // ví dụ lấy brand/tên model tuỳ schema của bạn
-    private BigDecimal price;    // giá xe
+    private String vehicleModel;
+    private BigDecimal price;
 
     private BigDecimal depositAmount;
     private BigDecimal remainingAmount;

@@ -97,9 +97,8 @@ public class OrderServiceImpl implements OrderService {
         if (serial != null) {
             switch (next) {
                 case PAID -> {
-                    // >>> ADD THIS: nâng deposit lên bằng giá xe để remaining = 0
                     var price = serial.getVehicle().getPrice();
-                    order.setDepositAmount(price);  // <-- dòng quan trọng
+                    order.setDepositAmount(price);
 
                     if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
                         serial.setStatus(VehicleStatus.SOLD_OUT);
@@ -125,7 +124,6 @@ public class OrderServiceImpl implements OrderService {
                     order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
                 }
                 case OVERDUE -> {
-                    // tuỳ policy, thường giữ nguyên deposit, trả VIN về AVAILABLE
                     if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
                         serial.setStatus(VehicleStatus.AVAILABLE);
                         serial.setHoldUntil(null);
@@ -178,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderResponse> getByVehicleId(Long vehicleId) {
         return orderRepo.findOrdersByVehicleIdWithGraph(vehicleId).stream()
-                .map(order -> new OrderResponse(order))
+                .map(mapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
 }

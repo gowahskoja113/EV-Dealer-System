@@ -11,7 +11,7 @@ public class VinGenerator {
             case "red" -> "R";
             case "blue" -> "B";
             case "white" -> "W";
-            case "black" -> "K"; // tránh trùng 'B'
+            case "black" -> "K";
             case "green" -> "G";
             case "yellow" -> "Y";
             case "silver" -> "S";
@@ -20,7 +20,7 @@ public class VinGenerator {
         };
     }
 
-    public String buildVin(int year, Long vehicleId, String colorLetter, int seqNo) {
-        return "VIN" + year + vehicleId + colorLetter + String.format("%04d", seqNo);
+    public String buildVin(int year,Long dealerShipId, long warehouseId, Long vehicleId, String colorLetter, int seqNo) {
+        return "VIN" + year + dealerShipId + warehouseId + vehicleId + colorLetter + String.format("%04d", seqNo);
     }
 }

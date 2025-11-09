@@ -50,7 +50,7 @@ public class Order {
     // remaining status
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", length = 20, nullable = true)
-    private OrderPaymentStatus paymentStatus; // (UNPAID, PARTIAL, PAID, OVERDUE)
+    private OrderPaymentStatus paymentStatus;
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;
