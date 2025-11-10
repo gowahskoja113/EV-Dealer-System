@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
 import com.swp391.evdealersystem.dto.request.OrderRequest;
+import com.swp391.evdealersystem.dto.request.UpdateDeliveryDateRequest;
 import com.swp391.evdealersystem.dto.response.DepositOrderView;
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
@@ -9,6 +10,8 @@ import com.swp391.evdealersystem.service.OrderQueryService;
 import com.swp391.evdealersystem.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,5 +62,30 @@ public class OrderController {
     ) {
         List<DepositOrderView> data = orderQueryService.getDepositedOrders(customerId, orderId);
         return ResponseEntity.ok(data);
+    }
+
+    @PutMapping("/{orderId}/delivery")
+    public ResponseEntity<OrderResponse> updateDeliveryDate(
+            @PathVariable Long orderId,
+            @Valid @RequestBody UpdateDeliveryDateRequest request) {
+
+        OrderResponse response = orderService.setDeliveryDate(orderId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{orderId}/delivery-slip")
+    public ResponseEntity<byte[]> getDeliverySlip(@PathVariable Long orderId) {
+
+        byte[] pdfBytes = orderService.generateDeliverySlip(orderId);
+        String filename = "PhieuGiaoXe_" + orderId + ".pdf";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", filename);
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .body(pdfBytes);
     }
 }

@@ -21,7 +21,8 @@ public class OrderResponse {
 
     private BigDecimal totalAmount;
 
-    private BigDecimal depositAmount;
+    private BigDecimal planedDepositAmount;
+    private BigDecimal remainingAmount;
     private OrderStatus status;
     private OrderPaymentStatus paymentStatus;
     private LocalDate deliveryDate;

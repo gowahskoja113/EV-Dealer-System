@@ -5,6 +5,7 @@ import com.swp391.evdealersystem.dto.request.StartVnpayRequest;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
 import com.swp391.evdealersystem.dto.response.StartVnpayResponse;
 import com.swp391.evdealersystem.dto.response.VnpIpnResponse;
+import com.swp391.evdealersystem.entity.Customer;
 import com.swp391.evdealersystem.entity.Order;
 import com.swp391.evdealersystem.entity.Payment;
 import com.swp391.evdealersystem.entity.VehicleSerial;
@@ -31,6 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final WarehouseRepository warehouseRepo;
     private final OrderMapper mapper;
     private final VNPAYService vnpayService;
+    private final CustomerRepository customerRepo;
 
     @Transactional
     public OrderResponse processCash(Long orderId, CashPaymentRequest req) {
@@ -47,9 +49,9 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalStateException("Order missing vehicle/serial.");
         }
 
-        BigDecimal price   = serial.getVehicle().getPrice() != null ? serial.getVehicle().getPrice() : BigDecimal.ZERO;
+        BigDecimal price = serial.getVehicle().getPrice() != null ? serial.getVehicle().getPrice() : BigDecimal.ZERO;
         BigDecimal deposit = order.getDepositAmount() != null ? order.getDepositAmount() : BigDecimal.ZERO;
-        BigDecimal paid    = req.getAmount();
+        BigDecimal paid = req.getAmount();
         if (paid == null || paid.signum() <= 0) {
             throw new IllegalArgumentException("amount must be > 0");
         }
@@ -82,6 +84,11 @@ public class PaymentServiceImpl implements PaymentService {
             order.setPaymentStatus(OrderPaymentStatus.PAID);
             order.setStatus(OrderStatus.COMPLETED);
 
+            Customer customer = order.getCustomer();
+            if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
+                customer.setStatus(CustomerStatus.CUSTOMER);
+                customerRepo.save(customer);
+            }
             if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
                 serial.setStatus(VehicleStatus.SOLD_OUT);
                 serial.setHoldUntil(null);
@@ -127,7 +134,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalStateException("Order missing vehicle/price.");
         }
 
-        var price   = order.getSerial().getVehicle().getPrice();
+        var price = order.getSerial().getVehicle().getPrice();
         var deposit = order.getDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getDepositAmount();
 
         java.math.BigDecimal toPay;
@@ -226,6 +233,12 @@ public class PaymentServiceImpl implements PaymentService {
             } else if (payment.getType() == PaymentPurpose.REMAINING) {
                 order.setPaymentStatus(OrderPaymentStatus.PAID);
                 order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
+
+                Customer customer = order.getCustomer();
+                if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
+                    customer.setStatus(CustomerStatus.CUSTOMER);
+                    customerRepo.save(customer); // Lưu lại thay đổi của Customer
+                }
 
                 if (serial != null && serial.getStatus() != VehicleStatus.SOLD_OUT) {
                     serial.setStatus(VehicleStatus.SOLD_OUT);

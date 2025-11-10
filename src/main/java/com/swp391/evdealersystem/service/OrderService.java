@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
 import com.swp391.evdealersystem.dto.request.OrderRequest;
+import com.swp391.evdealersystem.dto.request.UpdateDeliveryDateRequest;
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
 
@@ -17,5 +18,7 @@ public interface OrderService {
     List<OrderResponse> getByCustomerId(Long customerId);
     List<OrderResponse> getByVehicleId(Long vehicleId);
 
+    OrderResponse setDeliveryDate(Long orderId, UpdateDeliveryDateRequest request);
+    byte[] generateDeliverySlip(Long orderId);
     void delete(Long id);
 }

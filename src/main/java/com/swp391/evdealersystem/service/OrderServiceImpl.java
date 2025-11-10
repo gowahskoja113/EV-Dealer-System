@@ -2,13 +2,14 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
 import com.swp391.evdealersystem.dto.request.OrderRequest;
+import com.swp391.evdealersystem.dto.request.UpdateDeliveryDateRequest;
+import com.swp391.evdealersystem.dto.response.DeliverySlipDTO;
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
-import com.swp391.evdealersystem.entity.Customer;
-import com.swp391.evdealersystem.entity.ElectricVehicle;
-import com.swp391.evdealersystem.entity.Order;
-import com.swp391.evdealersystem.entity.VehicleSerial;
+import com.swp391.evdealersystem.entity.*;
 import com.swp391.evdealersystem.enums.OrderPaymentStatus;
+
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 import com.swp391.evdealersystem.enums.OrderStatus;
@@ -33,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper mapper;
     private final WarehouseStockRepository stockRepo;
     private final WarehouseRepository warehouseRepo;
+    private final PdfGenerationService pdfGenerationService;
 
     private void validateDeposit(ElectricVehicle v, java.math.BigDecimal deposit) {
         if (v.getPrice() == null || v.getPrice().signum() < 0) {
@@ -140,6 +142,7 @@ public class OrderServiceImpl implements OrderService {
         return mapper.toOrderResponse(order);
     }
 
+
     @Transactional
     @Override
     public void delete(Long id) {
@@ -178,5 +181,59 @@ public class OrderServiceImpl implements OrderService {
         return orderRepo.findOrdersByVehicleIdWithGraph(vehicleId).stream()
                 .map(mapper::toOrderResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
+    public OrderResponse setDeliveryDate(Long orderId, UpdateDeliveryDateRequest request) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
+
+        if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
+            throw new IllegalStateException("Order must be fully PAID before setting delivery date.");
+        }
+
+        order.setDeliveryDate(request.getDeliveryDate());
+        order = orderRepo.save(order);
+
+        return mapper.toOrderResponse(order);
+    }
+    @Transactional
+    @Override
+    public byte[] generateDeliverySlip(Long orderId) {
+        Order order = orderRepo.findOrderDetailsForContract(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with full details: " + orderId));
+
+        if (order.getDeliveryDate() == null) {
+            throw new IllegalStateException("Delivery date must be set before generating delivery slip.");
+        }
+
+        DeliverySlipDTO dto = mapOrderToDeliverySlipDTO(order);
+
+        try {
+            return pdfGenerationService.generateDeliverySlipPdf(dto);
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating PDF delivery slip: " + e.getMessage(), e);
+        }
+    }
+
+    private DeliverySlipDTO mapOrderToDeliverySlipDTO(Order order) {
+        Customer c = order.getCustomer();
+        VehicleSerial s = order.getSerial();
+        Model m = s.getVehicle().getModel();
+        User sales = c.getAssignedSales();
+
+        return DeliverySlipDTO.builder()
+                .orderId(order.getOrderId())
+                .deliveryDate(order.getDeliveryDate())
+                .salespersonName(sales != null ? sales.getName() : "N/A (Demo)") // Giả sử User có getFullName()
+                .customerName(c.getName())
+                .customerAddress(c.getAddress())
+                .customerPhone(c.getPhoneNumber())
+                .vehicleBrand(m.getBrand())
+                .vehicleModelCode(m.getModelCode())
+                .vehicleColor(m.getColor())
+                .vehicleVin(s.getVin())
+                .build();
     }
 }

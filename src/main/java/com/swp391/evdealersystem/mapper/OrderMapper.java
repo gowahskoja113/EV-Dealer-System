@@ -34,7 +34,8 @@ public class OrderMapper {
             }
         }
 
-        res.setDepositAmount(order.getDepositAmount());
+        res.setPlanedDepositAmount(order.getPlannedDepositAmount());
+        res.setRemainingAmount(order.getRemainingAmount());
         res.setStatus(order.getStatus());
         res.setPaymentStatus(order.getPaymentStatus());
         res.setDeliveryDate(order.getDeliveryDate());
