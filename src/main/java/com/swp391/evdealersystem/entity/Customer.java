@@ -41,7 +41,7 @@ public class Customer {
     private String address;
 
     @Size(max = 255)
-    @Column(name = "interest_vehicle", length = 255)
+    @Column(name = "note", length = 255)
     private String note;
 
     @Enumerated(EnumType.STRING)
@@ -55,5 +55,10 @@ public class Customer {
     )
     @ToString.Exclude
     private User assignedSales;
+
+    // chỉ nhắc: mapping Appointment đã đúng 1-n
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = false)
+    @ToString.Exclude
+    private List<Appointment> appointments = new ArrayList<>();
 
 }

@@ -127,8 +127,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         var now = java.time.LocalDateTime.now(clock);
         switch (req.getStatus()) {
             case CANCELED -> {
-                // nếu muốn siết: chỉ hủy trước giờ hẹn
-                // if (!now.isBefore(a.getStartAt())) throw new ConflictException("Chỉ hủy trước giờ hẹn");
+
+                 if (!now.isBefore(a.getStartAt())) throw new ConflictException("Chỉ hủy trước giờ hẹn");
                 a.setStatus(AppointmentStatus.CANCELED);
             }
             case IN_SERVICE -> {
