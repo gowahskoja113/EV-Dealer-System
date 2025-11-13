@@ -16,4 +16,6 @@ public interface ServiceRecordRepository extends JpaRepository<ServiceRecord, Lo
 
     @EntityGraph(attributePaths = {"user", "customer", "service"})
     Page<ServiceRecord> findByService_Id(Long serviceId, Pageable pageable);
+
+
 }

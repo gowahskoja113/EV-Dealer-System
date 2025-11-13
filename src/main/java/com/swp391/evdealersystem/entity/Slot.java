@@ -1,53 +1,72 @@
 package com.swp391.evdealersystem.entity;
 
-
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
-@Setter
-@Getter
+
+@Data
 @Entity
+@Table(name = "slots")
 public class Slot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long slotId;
 
     @Column(nullable = false)
-    private LocalDateTime startTime;  // Thời gian bắt đầu của slot
+    private LocalDateTime startTime; // Thời gian bắt đầu slot
 
     @Column(nullable = false)
-    private LocalDateTime endTime;    // Thời gian kết thúc của slot
+    private LocalDateTime endTime; // Thời gian kết thúc slot
 
     @Column(nullable = false)
-    private int maxTestDrive = 5;     // Số lượng dịch vụ lái thử tối đa
+    private Integer maxTestDrive; // Giới hạn số lượng lái thử
 
     @Column(nullable = false)
-    private int maxService = 10;      // Số lượng dịch vụ bảo dưỡng tối đa
+    private Integer maxService; // Giới hạn số lượng bảo dưỡng
 
     @Column(nullable = false)
-    private int testDriveCount = 0;   // Số lượng dịch vụ lái thử đã đặt
+    private Integer testDriveCount = 0; // Số người đã đăng ký lái thử
 
     @Column(nullable = false)
-    private int serviceCount = 0;     // Số lượng dịch vụ bảo dưỡng đã đặt
+    private Integer serviceCount = 0; // Số người đã đăng ký bảo dưỡng
 
-    @OneToMany(mappedBy = "slot", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Appointment> appointments;  // Liên kết với các lịch hẹn (appointments)
-
-    // Method to check if the slot is full for a certain service type
-    public boolean isFullForTestDrive() {
-        return testDriveCount >= maxTestDrive;
+    // Kiểm tra nếu slot còn chỗ cho lái thử
+    public boolean isAvailableForTestDrive() {
+        return testDriveCount < maxTestDrive;
     }
 
-    public boolean isFullForService() {
-        return serviceCount >= maxService;
+    // Kiểm tra nếu slot còn chỗ cho bảo dưỡng
+    public boolean isAvailableForService() {
+        return serviceCount < maxService;
     }
 
-    // Method to check if the slot is available for a given time
-    public boolean isAvailable(LocalDateTime appointmentTime) {
-        return !appointmentTime.isBefore(startTime) && !appointmentTime.isAfter(endTime);
+    // Tăng số lượng đăng ký cho dịch vụ
+    public void incrementTestDriveCount() {
+        if (isAvailableForTestDrive()) {
+            testDriveCount++;
+        }
     }
+
+    public void incrementServiceCount() {
+        if (isAvailableForService()) {
+            serviceCount++;
+        }
+    }
+
+    // Giảm số lượng đăng ký khi hủy cuộc hẹn
+    public void decrementTestDriveCount() {
+        if (testDriveCount > 0) {
+            testDriveCount--;
+        }
+    }
+
+    public void decrementServiceCount() {
+        if (serviceCount > 0) {
+            serviceCount--;
+        }
+    }
+
+
 }

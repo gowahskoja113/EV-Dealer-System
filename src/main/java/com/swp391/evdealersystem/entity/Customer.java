@@ -61,4 +61,38 @@ public class Customer {
     @ToString.Exclude
     private List<Appointment> appointments = new ArrayList<>();
 
+
+    public @NotBlank @Size(max = 120) String getName() {
+        return name;
+    }
+
+    public void setName(@NotBlank @Size(max = 120) String name) {
+        this.name = name;
+    }
+
+    public @NotBlank @Size(max = 32) String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(@NotBlank @Size(max = 32) String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public @Size(max = 255) String getAddress() {
+        return address;
+    }
+
+    public void setAddress(@Size(max = 255) String address) {
+        this.address = address;
+    }
+
+    public @Size(max = 255) String getNote() {
+        return note;
+    }
+
+    public void setNote(@Size(max = 255) String note) {
+        this.note = note;
+    }
+
+
 }

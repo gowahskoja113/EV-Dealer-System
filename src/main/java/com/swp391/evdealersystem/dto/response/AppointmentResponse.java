@@ -11,5 +11,22 @@ import lombok.NoArgsConstructor;
 public class AppointmentResponse {
     private Long appointmentId;
     private AppointmentStatus status;
+
+
+    public AppointmentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AppointmentStatus status) {
+        this.status = status;
+    }
+
+    public Long getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Long appointmentId) {
+        this.appointmentId = appointmentId;
+    }
 }
 

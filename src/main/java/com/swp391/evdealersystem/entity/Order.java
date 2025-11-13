@@ -141,4 +141,7 @@ public class Order {
         if (deposit != null && deposit.signum() > 0) return OrderPaymentStatus.DEPOSIT_PAID;
         return OrderPaymentStatus.UNPAID;
     }
+
+
+
 }

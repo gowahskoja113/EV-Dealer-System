@@ -54,25 +54,35 @@ public class SlotServiceImpl implements SlotService {
         slotRepository.deleteById(slotId);
     }
 
-    // Kiểm tra tình trạng Slot
-
     @Override
     public boolean isSlotAvailableForTestDrive(Long slotId) {
-        Optional<Slot> slotOptional = slotRepository.findById(slotId);
-        if (slotOptional.isPresent()) {
-            Slot slot = slotOptional.get();
-            return !slot.isFullForTestDrive();
-        }
         return false;
     }
 
     @Override
     public boolean isSlotAvailableForService(Long slotId) {
-        Optional<Slot> slotOptional = slotRepository.findById(slotId);
-        if (slotOptional.isPresent()) {
-            Slot slot = slotOptional.get();
-            return !slot.isFullForService();
-        }
         return false;
     }
+
+//    // Kiểm tra tình trạng Slot
+//
+//    @Override
+//    public boolean isSlotAvailableForTestDrive(Long slotId) {
+//        Optional<Slot> slotOptional = slotRepository.findById(slotId);
+//        if (slotOptional.isPresent()) {
+//            Slot slot = slotOptional.get();
+//            return !slot.isFullForTestDrive();
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean isSlotAvailableForService(Long slotId) {
+//        Optional<Slot> slotOptional = slotRepository.findById(slotId);
+//        if (slotOptional.isPresent()) {
+//            Slot slot = slotOptional.get();
+//            return !slot.isFullForService();
+//        }
+//        return false;
+//    }
 }
