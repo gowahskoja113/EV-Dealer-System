@@ -67,7 +67,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         try {
             // 1) chặn trùng lịch của cùng customer trong chính slot đó
-            boolean dup = repo.existsByCustomerIdAndWarehouseIdAndStartAtAndEndAt(
+            // SỬA TẠI ĐÂY: Dùng tên phương thức mới trong Repository
+            boolean dup = repo.existsByCustomerCustomerIdAndWarehouseIdAndStartAtAndEndAt(
                     r.getCustomerId(), r.getWarehouseId(), r.getStartAt(), r.getEndAt());
             if (dup) throw new ConflictException("Khách đã có lịch trong khung giờ này");
 
@@ -76,6 +77,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     r.getWarehouseId(), r.getServiceId(), r.getStartAt(), r.getEndAt()
             );
 
+            // TODO: Bổ sung logic kiểm tra nếu (booked >= 10) thì throw ConflictException
 
             // 3) map DTO -> entity (dùng mapper), save → map entity -> response
             Appointment a = mapper.toEntity(r);

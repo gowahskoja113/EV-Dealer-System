@@ -97,7 +97,6 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
 
         document.add(table);
         document.add(new Paragraph().setMarginBottom(15));
-
         document.add(new Paragraph("VEHICLE DETAILS").setFont(fontBold).setFontSize(14).setUnderline().setMarginBottom(5));
         document.add(new Paragraph("Brand: " + dto.getVehicleBrand()).setFont(font));
         document.add(new Paragraph("Model: " + dto.getVehicleModelCode()).setFont(font));

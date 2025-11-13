@@ -24,18 +24,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
                      LocalDateTime startAt, LocalDateTime endAt);
 
     // KH đã có lịch trong cùng slot & địa điểm chưa
-    boolean existsByCustomerIdAndWarehouseIdAndStartAtAndEndAt(
+    boolean existsByCustomerCustomerIdAndWarehouseIdAndStartAtAndEndAt(
             Long customerId, Long warehouseId, LocalDateTime startAt, LocalDateTime endAt);
 
     // GET danh sách theo khoảng thời gian + lọc tùy chọn
     @Query("""
-     SELECT a FROM Appointment a
-      WHERE a.startAt < :to AND a.endAt > :from
-        AND (:warehouseId IS NULL OR a.warehouseId = :warehouseId)
-        AND (:serviceId   IS NULL OR a.serviceId   = :serviceId)
-        AND (:customerId  IS NULL OR a.customerId  = :customerId)
-      ORDER BY a.startAt ASC
-  """)
+ SELECT a FROM Appointment a
+  WHERE a.startAt < :to AND a.endAt > :from
+    AND (:warehouseId IS NULL OR a.warehouseId = :warehouseId)
+    AND (:serviceId IS NULL OR a.service.id = :serviceId)   // ĐÃ SỬA TẠI ĐÂY
+    AND (:customerId IS NULL OR a.customer.customerId = :customerId) // Giữ nguyên
+  ORDER BY a.startAt ASC
+""")
     List<Appointment> findByFilters(@Param("from") LocalDateTime from,
                                     @Param("to") LocalDateTime to,
                                     @Param("warehouseId") Long warehouseId,
