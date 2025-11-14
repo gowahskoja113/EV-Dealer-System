@@ -117,12 +117,6 @@ public class Order {
     }
 
     private void syncOrderStatusFromPayment() {
-
-        /** Rule:
-         paymentStatus PAID = COMPLETED
-         paymentStatus OVERDUE = CANCELED
-         còn lại = PROCESSING **/
-
         if (paymentStatus == OrderPaymentStatus.PAID) {
             status = OrderStatus.COMPLETED;
         } else if (paymentStatus == OrderPaymentStatus.OVERDUE) {

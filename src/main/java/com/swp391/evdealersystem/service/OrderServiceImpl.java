@@ -11,6 +11,7 @@ import com.swp391.evdealersystem.entity.*;
 import com.swp391.evdealersystem.enums.OrderPaymentStatus;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 import com.swp391.evdealersystem.enums.OrderStatus;
@@ -138,11 +139,10 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        order.setPaymentStatus(next); // set sau khi tinh deposit
+        order.setPaymentStatus(next);
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
     }
-
 
     @Transactional
     @Override
@@ -195,15 +195,54 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
+        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.DELIVERING) {
+            throw new IllegalStateException("Order must be in COMPLETED (paid) or DELIVERING status to set/update delivery date.");
+        }
+
         if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
             throw new IllegalStateException("Order must be fully PAID before setting delivery date.");
         }
 
-        order.setDeliveryDate(request.getDeliveryDate());
-        order = orderRepo.save(order);
+        if (request.getDeliveryDate() == null) {
+            throw new IllegalArgumentException("Delivery date cannot be null.");
+        }
 
+        LocalDate requestedDate = request.getDeliveryDate();
+        LocalDate today = LocalDate.now();
+
+        if (requestedDate.isBefore(today)) {
+            throw new IllegalArgumentException("Delivery date cannot be in the past. Requested: " + requestedDate);
+        }
+
+        order.setDeliveryDate(requestedDate);
+
+        order.setStatus(OrderStatus.DELIVERING);
+
+        order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
     }
+
+    @Transactional
+    @Override
+    public OrderResponse deliverOrderNow(Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
+
+        if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
+            throw new IllegalStateException("Order must be fully PAID before delivery.");
+        }
+
+        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.DELIVERING) {
+            throw new IllegalStateException("Order status must be COMPLETED or DELIVERING. Status: " + order.getStatus());
+        }
+
+        order.setDeliveryDate(LocalDate.now());
+        order.setStatus(OrderStatus.DELIVERED);
+
+        order = orderRepo.save(order);
+        return mapper.toOrderResponse(order);
+    }
+
     @Transactional
     @Override
     public byte[] generateDeliverySlip(Long orderId) {
@@ -212,6 +251,17 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getDeliveryDate() == null) {
             throw new IllegalStateException("Delivery date must be set before generating delivery slip.");
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERING &&
+                !order.getDeliveryDate().isAfter(LocalDate.now())) {
+
+            order.setStatus(OrderStatus.DELIVERED);
+            order = orderRepo.save(order);
+        }
+
+        if (order.getStatus() != OrderStatus.DELIVERING && order.getStatus() != OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Order is not ready for delivery slip. Status: " + order.getStatus());
         }
 
         DeliverySlipDTO dto = mapOrderToDeliverySlipDTO(order);
@@ -232,7 +282,7 @@ public class OrderServiceImpl implements OrderService {
         return DeliverySlipDTO.builder()
                 .orderId(order.getOrderId())
                 .deliveryDate(order.getDeliveryDate())
-                .salespersonName(sales != null ? sales.getName() : "N/A (Demo)") // Giả sử User có getFullName()
+                .salespersonName(sales != null ? sales.getName() : "N/A (Demo)")
                 .customerName(c.getName())
                 .customerAddress(c.getAddress())
                 .customerPhone(c.getPhoneNumber())
@@ -240,6 +290,11 @@ public class OrderServiceImpl implements OrderService {
                 .vehicleModelCode(m.getModelCode())
                 .vehicleColor(m.getColor())
                 .vehicleVin(s.getVin())
+
+                // Thêm thông tin tài chính đã thống nhất
+                .vehiclePrice(s.getVehicle().getPrice())
+                .amountPaid(order.getDepositAmount())
+                .remainingAmount(order.getRemainingAmount())
                 .build();
     }
 }

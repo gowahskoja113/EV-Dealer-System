@@ -89,6 +89,12 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{orderId}/deliver-now")
+    public ResponseEntity<OrderResponse> deliverNow(@PathVariable Long orderId) {
+        OrderResponse response = orderService.deliverOrderNow(orderId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{orderId}/delivery-slip")
     public ResponseEntity<byte[]> getDeliverySlip(@PathVariable Long orderId) {
 
