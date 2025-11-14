@@ -57,4 +57,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH v.model m " +
             "WHERE o.orderId = :orderId")
     Optional<Order> findOrderDetailsForContract(@Param("orderId") Long orderId);
+
 }

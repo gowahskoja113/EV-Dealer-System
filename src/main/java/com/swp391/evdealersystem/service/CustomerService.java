@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.CustomerRequest;
 import com.swp391.evdealersystem.dto.response.CustomerResponse;
+import com.swp391.evdealersystem.dto.response.CustomerWithOrdersResponse;
 
 import java.util.List;
 
@@ -22,5 +23,7 @@ public interface CustomerService {
     CustomerResponse assignSales(Long customerId, Long userId);
 
     CustomerResponse unassignSales(Long customerId);
+
+    CustomerWithOrdersResponse getCustomerWithOrdersById(Long customerId);
 }
 

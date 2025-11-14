@@ -2,13 +2,18 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.CustomerRequest;
 import com.swp391.evdealersystem.dto.response.CustomerResponse;
+import com.swp391.evdealersystem.dto.response.CustomerWithOrdersResponse;
+import com.swp391.evdealersystem.dto.response.OrderResponse;
 import com.swp391.evdealersystem.entity.Customer;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.User;
 import com.swp391.evdealersystem.mapper.CustomerMapper;
+import com.swp391.evdealersystem.mapper.OrderMapper;
 import com.swp391.evdealersystem.repository.CustomerRepository;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
+import com.swp391.evdealersystem.repository.OrderRepository;
 import com.swp391.evdealersystem.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +30,8 @@ public class CustomerServiceImpl implements CustomerService {
     private final ElectricVehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final CustomerMapper customerMapper;
+    private final OrderRepository orderRepository ;
+    private final OrderMapper orderMapper ;
 
     @Override
     public CustomerResponse createCustomer(CustomerRequest request) {
@@ -110,5 +117,21 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.save(customer);
         return customerMapper.toResponse(customer);
     }
-}
+
+    @Override
+    public CustomerWithOrdersResponse getCustomerWithOrdersById(Long customerId) {
+            // Lấy thông tin khách hàng
+            Customer customer = customerRepository.findById(customerId)
+                    .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + customerId));
+
+            // Lấy danh sách các đơn hàng của khách hàng
+            List<OrderResponse> orders = orderRepository.findByCustomer_CustomerId(customerId).stream()
+                    .map(orderMapper::toOrderResponse)  // Chuyển đổi từng Order thành OrderResponse
+                    .collect(Collectors.toList());
+
+            // Trả về thông tin khách hàng và danh sách đơn hàng
+            return new CustomerWithOrdersResponse(customer, orders);
+        }
+    }
+
 

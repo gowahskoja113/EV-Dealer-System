@@ -3,6 +3,7 @@ package com.swp391.evdealersystem.service;
 import com.swp391.evdealersystem.dto.request.OrderDepositRequest;
 import com.swp391.evdealersystem.dto.request.OrderRequest;
 import com.swp391.evdealersystem.dto.request.UpdateDeliveryDateRequest;
+import com.swp391.evdealersystem.dto.response.CustomerWithOrdersResponse;
 import com.swp391.evdealersystem.dto.response.DeliverySlipDTO;
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
@@ -149,6 +150,11 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
         orderRepo.delete(order);
+    }
+
+    @Override
+    public CustomerWithOrdersResponse getCustomerWithOrdersById(Long customerId) {
+        return null;
     }
 
     @Transactional

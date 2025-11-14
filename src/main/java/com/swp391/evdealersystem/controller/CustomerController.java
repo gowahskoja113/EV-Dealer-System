@@ -2,9 +2,11 @@ package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.CustomerRequest;
 import com.swp391.evdealersystem.dto.response.CustomerResponse;
+import com.swp391.evdealersystem.dto.response.CustomerWithOrdersResponse;
 import com.swp391.evdealersystem.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -65,5 +67,16 @@ public class CustomerController {
     public CustomerResponse unassignSales(@PathVariable Long id) {
         return customerService.unassignSales(id);
     }
-}
+
+
+
+
+        // API lấy thông tin khách hàng và các đơn hàng của khách hàng đó
+        @GetMapping("/{customerId}/orders")
+        public CustomerWithOrdersResponse getCustomerWithOrders(@PathVariable Long customerId) {
+            return customerService.getCustomerWithOrdersById(customerId);  // Call service to get data
+        }
+    }
+
+
 
