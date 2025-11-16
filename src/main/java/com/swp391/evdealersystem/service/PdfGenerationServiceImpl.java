@@ -93,7 +93,8 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         document.add(new Paragraph("Year: " + dto.getVehicleProductionYear()).setFont(font));
         document.add(new Paragraph("Color: " + dto.getVehicleColor()).setFont(font));
         document.add(new Paragraph("VIN (Vehicle Identification Number): " + dto.getVehicleVin()).setFont(fontBold));
-
+        document.add(new Paragraph("Deposited Amount: " + dto.getPlannedDepositAmount()).setFont(fontBold));
+        document.add(new Paragraph("Remaining Amount: " + remainingBalance).setFont(fontBold));
         document.add(new Paragraph("Total Price: " + CURRENCY_FORMAT.format(totalPrice)).setFont(fontBold));
         document.add(new Paragraph().setMarginBottom(15));
 
@@ -192,7 +193,7 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         document.add(new Paragraph("Model: " + vehicleModel).setFont(font));
         document.add(new Paragraph("Color: " + vehicleColor).setFont(font));
         document.add(new Paragraph("VIN (Vehicle Identification Number): " + vehicleVin)
-                .setFont(fontBold).setMarginBottom(15)); // Giảm margin
+                .setFont(fontBold).setMarginBottom(15));
 
         document.add(new Paragraph("FINANCIAL SUMMARY:").setFont(fontBold).setFontSize(14));
 

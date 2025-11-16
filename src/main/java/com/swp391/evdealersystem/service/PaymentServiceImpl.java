@@ -77,7 +77,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (fullyPaid) {
             order.setPaymentStatus(OrderPaymentStatus.PAID);
-            order.setStatus(OrderStatus.COMPLETED);
+
+            order.setStatus(OrderStatus.ORDER_PAID);
+            if (order.getFullyPaidAt() == null) {
+                order.setFullyPaidAt(LocalDateTime.now());
+            }
+
+            if (order.getDepositPaidAt() == null) {
+                order.setDepositPaidAt(LocalDateTime.now());
+            }
 
             Customer customer = order.getCustomer();
             if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
@@ -106,14 +114,19 @@ public class PaymentServiceImpl implements PaymentService {
                 warehouseRepo.save(wh);
             }
         } else {
+
             if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                 order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
+
+                if (order.getDepositPaidAt() == null) {
+                    order.setDepositPaidAt(LocalDateTime.now());
+                }
+
             } else {
                 order.setPaymentStatus(OrderPaymentStatus.UNPAID);
             }
             order.setStatus(OrderStatus.PROCESSING);
         }
-
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
     }
@@ -216,6 +229,11 @@ public class PaymentServiceImpl implements PaymentService {
                 var planned = order.getPlannedDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getPlannedDepositAmount();
                 if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                     order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
+
+                    if (order.getDepositPaidAt() == null) {
+                        order.setDepositPaidAt(LocalDateTime.now());
+                    }
+
                 } else {
                     order.setPaymentStatus(OrderPaymentStatus.UNPAID);
                 }
@@ -225,7 +243,18 @@ public class PaymentServiceImpl implements PaymentService {
             } else if (payment.getType() == PaymentPurpose.REMAINING) {
 
                 order.setPaymentStatus(OrderPaymentStatus.PAID);
-                order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
+
+                // *** THAY ĐỔI LOGIC ***
+                order.setStatus(OrderStatus.ORDER_PAID);
+
+                if (order.getFullyPaidAt() == null) {
+                    order.setFullyPaidAt(LocalDateTime.now());
+                }
+                // Nếu thanh toán phần còn lại mà chưa set ngày cọc
+                if (order.getDepositPaidAt() == null) {
+                    order.setDepositPaidAt(LocalDateTime.now());
+                }
+                // *** KẾT THÚC THAY ĐỔI ***
 
                 Customer customer = order.getCustomer();
                 if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
@@ -238,6 +267,7 @@ public class PaymentServiceImpl implements PaymentService {
                     serial.setHoldUntil(null);
                     serialRepo.save(serial);
 
+                    // ... (Logic trừ kho của bạn) ...
                     Long whId = serial.getWarehouse().getWarehouseId();
                     Long modelId = serial.getModel().getModelId();
 

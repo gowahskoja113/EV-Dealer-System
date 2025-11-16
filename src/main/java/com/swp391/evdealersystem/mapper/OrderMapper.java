@@ -46,6 +46,9 @@ public class OrderMapper {
             res.setCustomerName(order.getCustomer().getName());
         }
 
+        res.setDepositPaidAt(order.getDepositPaidAt());
+        res.setFullyPaidAt(order.getFullyPaidAt());
+
         return res;
     }
 
@@ -65,6 +68,8 @@ public class OrderMapper {
         res.setCurrency(o.getCurrency());
         res.setOrderDate(o.getOrderDate());
         res.setDeliveryDate(o.getDeliveryDate());
+        res.setDepositPaidAt(o.getDepositPaidAt());
+        res.setFullyPaidAt(o.getFullyPaidAt());
         return res;
     }
 }

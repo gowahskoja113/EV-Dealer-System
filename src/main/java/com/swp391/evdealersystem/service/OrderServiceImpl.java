@@ -195,27 +195,23 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
-        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.DELIVERING) {
-            throw new IllegalStateException("Order must be in COMPLETED (paid) or DELIVERING status to set/update delivery date.");
-        }
-
-        if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
-            throw new IllegalStateException("Order must be fully PAID before setting delivery date.");
+        if (order.getStatus() != OrderStatus.ORDER_PAID && order.getStatus() != OrderStatus.DELIVERING) {
+            throw new IllegalStateException("Đơn hàng phải ở trạng thái ORDER_PAID hoặc DELIVERING mới được set ngày giao. " +
+                    "Trạng thái hiện tại: " + order.getStatus());
         }
 
         if (request.getDeliveryDate() == null) {
-            throw new IllegalArgumentException("Delivery date cannot be null.");
+            throw new IllegalArgumentException("Ngày giao hàng không được rỗng.");
         }
 
         LocalDate requestedDate = request.getDeliveryDate();
         LocalDate today = LocalDate.now();
 
         if (requestedDate.isBefore(today)) {
-            throw new IllegalArgumentException("Delivery date cannot be in the past. Requested: " + requestedDate);
+            throw new IllegalArgumentException("Ngày giao hàng không thể ở trong quá khứ. Ngày yêu cầu: " + requestedDate);
         }
 
         order.setDeliveryDate(requestedDate);
-
         order.setStatus(OrderStatus.DELIVERING);
 
         order = orderRepo.save(order);
@@ -237,7 +233,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setDeliveryDate(LocalDate.now());
-        order.setStatus(OrderStatus.DELIVERED);
+        order.setStatus(OrderStatus.COMPLETED);
 
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
@@ -256,11 +252,11 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() == OrderStatus.DELIVERING &&
                 !order.getDeliveryDate().isAfter(LocalDate.now())) {
 
-            order.setStatus(OrderStatus.DELIVERED);
+            order.setStatus(OrderStatus.COMPLETED);
             order = orderRepo.save(order);
         }
 
-        if (order.getStatus() != OrderStatus.DELIVERING && order.getStatus() != OrderStatus.DELIVERED) {
+        if (order.getStatus() != OrderStatus.DELIVERING && order.getStatus() != OrderStatus.COMPLETED) {
             throw new IllegalStateException("Order is not ready for delivery slip. Status: " + order.getStatus());
         }
 

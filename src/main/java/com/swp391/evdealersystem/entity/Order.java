@@ -58,6 +58,12 @@ public class Order {
     @Column(name = "currency", length = 8, nullable = true)
     private String currency;
 
+    @Column(name = "deposit_paid_at")
+    private LocalDateTime depositPaidAt;
+
+    @Column(name = "fully_paid_at")
+    private LocalDateTime fullyPaidAt;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -75,16 +81,15 @@ public class Order {
         if (orderDate == null) orderDate = LocalDateTime.now();
         if (currency == null)  currency = "VND";
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
+        if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
+        if (status == null) status = OrderStatus.PROCESSING;
+
+        updatedAt = LocalDateTime.now();
 
         BigDecimal price = (serial != null && serial.getVehicle() != null && serial.getVehicle().getPrice() != null)
                 ? serial.getVehicle().getPrice()
                 : BigDecimal.ZERO;
-
         remainingAmount = maxZero(price.subtract(depositAmount));
-
-        if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
-        if (status == null) status = OrderStatus.PROCESSING;
-        if (updatedAt == null) updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -95,47 +100,10 @@ public class Order {
 
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
         remainingAmount = maxZero(price.subtract(depositAmount));
-
-        if (paymentStatus == null || paymentStatus == OrderPaymentStatus.UNPAID || paymentStatus == OrderPaymentStatus.DEPOSIT_PAID) {
-            if (remainingAmount.signum() == 0) {
-                paymentStatus = OrderPaymentStatus.PAID;
-                status = OrderStatus.COMPLETED;
-            } else {
-                // chỉ đánh DEPOSIT_PAID khi đã đạt cọc dự kiến
-                BigDecimal planned = plannedDepositAmount == null ? BigDecimal.ZERO : plannedDepositAmount;
-                if (planned.signum() > 0 && depositAmount.compareTo(planned) >= 0) {
-                    paymentStatus = OrderPaymentStatus.DEPOSIT_PAID;
-                } else {
-                    paymentStatus = OrderPaymentStatus.UNPAID;
-                }
-                if (status != OrderStatus.CANCELED) {
-                    status = OrderStatus.PROCESSING;
-                }
-            }
-        }
         updatedAt = LocalDateTime.now();
-    }
-
-    private void syncOrderStatusFromPayment() {
-        if (paymentStatus == OrderPaymentStatus.PAID) {
-            status = OrderStatus.COMPLETED;
-        } else if (paymentStatus == OrderPaymentStatus.OVERDUE) {
-            status = OrderStatus.CANCELED;
-        } else {
-            status = OrderStatus.PROCESSING;
-        }
     }
 
     private static BigDecimal maxZero(BigDecimal v) {
         return v.signum() < 0 ? BigDecimal.ZERO : v;
     }
-
-    private OrderPaymentStatus calcPaymentStatus(BigDecimal deposit, BigDecimal remaining) {
-        if (remaining.signum() == 0) return OrderPaymentStatus.PAID;
-        if (deposit != null && deposit.signum() > 0) return OrderPaymentStatus.DEPOSIT_PAID;
-        return OrderPaymentStatus.UNPAID;
-    }
-
-
-
 }

@@ -23,4 +23,7 @@ public class OrderDepositResponse {
     private String currency;
     private LocalDateTime orderDate;
     private LocalDate deliveryDate;
+
+    private LocalDateTime depositPaidAt;
+    private LocalDateTime fullyPaidAt;
 }

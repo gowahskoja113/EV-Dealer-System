@@ -162,12 +162,11 @@ public class WarehouseServiceImpl implements WarehouseService {
                     return s;
                 });
 
-        int oldQty = stock.getQuantity(); // Số lượng cũ của model này
+        int oldQty = stock.getQuantity();
         int reqQty = request.getQuantity();
         int delta;
-        int newQty; // Số lượng mới của model này
+        int newQty;
 
-        // ---- TÍNH NEW QTY THEO MODE ----
         QtyMode mode = request.getMode() == null ? QtyMode.INCREMENT : request.getMode();
         switch (mode) {
             case SET -> {
@@ -188,14 +187,10 @@ public class WarehouseServiceImpl implements WarehouseService {
             default -> throw new IllegalArgumentException("Unsupported QtyMode");
         }
 
-        // === START: KIỂM TRA GIỚI HẠN 20 XE ===
         final int WAREHOUSE_CAPACITY_LIMIT = wh.getMaxCapacity();
 
-        // 1. Lấy tổng số lượng hiện tại của TẤT CẢ các model trong kho
         int currentTotal = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
 
-        // 2. Tính tổng dự kiến
-        // (tổng hiện tại - số lượng cũ của model này + số lượng mới của model này)
         int projectedTotal = (currentTotal - oldQty) + newQty;
 
         if (projectedTotal > WAREHOUSE_CAPACITY_LIMIT) {
@@ -207,13 +202,10 @@ public class WarehouseServiceImpl implements WarehouseService {
             );
         }
 
-        // Cập nhật số lượng cho stock này
         stock.setQuantity(newQty);
         stockRepo.save(stock);
 
-        // ---- ĐỒNG BỘ VIN THEO DELTA ----
         if (delta > 0) {
-            // ... (Logic tạo VIN của bạn giữ nguyên) ...
             int startSeq = vehicleSerialRepository.findMaxSeqNoByModelAndWarehouse(
                     model.getModelId(), wh.getWarehouseId());
             String colorLetter = vinGenerator.colorToLetter(model.getColor());
