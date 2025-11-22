@@ -64,6 +64,11 @@ public class SlotServiceImpl implements SlotService {
         return false;
     }
 
+    @Override
+    public List<Slot> getAllSlots() {
+        return slotRepository.findAll();
+    }
+
 //    // Kiểm tra tình trạng Slot
 //
 //    @Override

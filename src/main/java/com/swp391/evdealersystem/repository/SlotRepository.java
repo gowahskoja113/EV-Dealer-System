@@ -15,4 +15,6 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
 
     // Tìm Slot theo thời gian bắt đầu
     List<Slot> findByStartTime(LocalDateTime startTime);
+
+
 }

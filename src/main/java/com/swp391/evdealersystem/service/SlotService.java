@@ -12,6 +12,7 @@ public interface SlotService {
     Slot getSlotById(Long slotId);
     Slot updateSlot(Long slotId, Slot updatedSlot);
     void deleteSlot(Long slotId);
+    List<Slot> getAllSlots();
 
     // Kiểm tra tình trạng Slot
     boolean isSlotAvailableForTestDrive(Long slotId);
