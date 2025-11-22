@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -40,27 +41,25 @@ public class ElectricVehicleController {
         return ResponseEntity.ok(service.getAll());
     }
 
-//    @PostMapping
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<ElectricVehicleResponse> create(@Valid @RequestBody ElectricVehicleRequest req) {
-//        if (req.getModelCode() == null && req.getModelId() == null) {
-//            throw new IllegalArgumentException("modelCode hoặc modelId là bắt buộc");
-//        }
-//        // enforce 1 model ↔ 1 EV
-//        String code = req.getModelCode() != null
-//                ? req.getModelCode()
-//                : modelRepo.findById(req.getModelId())
-//                .orElseThrow(() -> new EntityNotFoundException("Model not found"))
-//                .getModelCode();
-//
-//        if (evRepo.existsByModel_ModelCode(code)) {
-//            throw new IllegalArgumentException("Đã tồn tại xe đại diện cho modelCode=" + code);
-//        }
-//
-//        // Ủy quyền cho service để tái sử dụng mapper/logic chung
-//        ElectricVehicleResponse saved = service.create(req);
-//        return ResponseEntity.created(URI.create("/api/electric-vehicles/" + saved.getVehicleId())).body(saved);
-//    }
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ElectricVehicleResponse> create(@Valid @RequestBody ElectricVehicleRequest req) {
+        if (req.getModelCode() == null && req.getModelId() == null) {
+            throw new IllegalArgumentException("modelCode hoặc modelId là bắt buộc");
+        }
+        String code = req.getModelCode() != null
+                ? req.getModelCode()
+                : modelRepo.findById(req.getModelId())
+                .orElseThrow(() -> new EntityNotFoundException("Model not found"))
+                .getModelCode();
+
+        if (evRepo.existsByModel_ModelCode(code)) {
+            throw new IllegalArgumentException("Đã tồn tại xe đại diện cho modelCode=" + code);
+        }
+
+        ElectricVehicleResponse saved = service.create(req);
+        return ResponseEntity.created(URI.create("/api/electric-vehicles/" + saved.getVehicleId())).body(saved);
+    }
 
     @GetMapping("/{vehicleId}")
     @PreAuthorize("hasAnyRole('ADMIN','EVMSTAFF')")

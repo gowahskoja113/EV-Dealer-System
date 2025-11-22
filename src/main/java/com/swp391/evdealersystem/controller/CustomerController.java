@@ -68,15 +68,12 @@ public class CustomerController {
         return customerService.unassignSales(id);
     }
 
-
-
-
-        // API lấy thông tin khách hàng và các đơn hàng của khách hàng đó
-        @GetMapping("/{customerId}/orders")
-        public CustomerWithOrdersResponse getCustomerWithOrders(@PathVariable Long customerId) {
-            return customerService.getCustomerWithOrdersById(customerId);  // Call service to get data
-        }
+    // API lấy thông tin khách hàng và các đơn hàng của khách hàng đó
+    @GetMapping("/{customerId}/orders")
+    public CustomerWithOrdersResponse getCustomerWithOrders(@PathVariable Long customerId) {
+        return customerService.getCustomerWithOrdersById(customerId);
     }
+}
 
 
 

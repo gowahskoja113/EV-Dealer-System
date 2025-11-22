@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,5 +58,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH v.model m " +
             "WHERE o.orderId = :orderId")
     Optional<Order> findOrderDetailsForContract(@Param("orderId") Long orderId);
+
+    List<Order> findAllByStatusAndDeliveryDateLessThanEqual(OrderStatus status, LocalDate date);
 
 }

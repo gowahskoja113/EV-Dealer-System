@@ -26,7 +26,7 @@ public class OrderMapper {
                 res.setVehicleModel(order.getSerial().getVehicle().getModel().getBrand());
             }
         } else {
-            // Fallback if vehicle is null (rare case)
+
             if (order.getRemainingAmount() != null && order.getDepositAmount() != null) {
                 res.setTotalAmount(order.getRemainingAmount().add(order.getDepositAmount()));
             } else {
@@ -39,12 +39,15 @@ public class OrderMapper {
         res.setStatus(order.getStatus());
         res.setPaymentStatus(order.getPaymentStatus());
         res.setDeliveryDate(order.getDeliveryDate());
-        res.setOrderDate(order.getOrderDate()); // Lấy ngày đặt hàng
+        res.setOrderDate(order.getOrderDate());
 
         if (order.getCustomer() != null) {
             res.setCustomerId(order.getCustomer().getCustomerId());
             res.setCustomerName(order.getCustomer().getName());
         }
+
+        res.setDepositPaidAt(order.getDepositPaidAt());
+        res.setFullyPaidAt(order.getFullyPaidAt());
 
         return res;
     }
@@ -65,6 +68,8 @@ public class OrderMapper {
         res.setCurrency(o.getCurrency());
         res.setOrderDate(o.getOrderDate());
         res.setDeliveryDate(o.getDeliveryDate());
+        res.setDepositPaidAt(o.getDepositPaidAt());
+        res.setFullyPaidAt(o.getFullyPaidAt());
         return res;
     }
 }

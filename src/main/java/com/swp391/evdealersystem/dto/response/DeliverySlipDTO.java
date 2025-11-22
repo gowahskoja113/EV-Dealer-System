@@ -1,31 +1,28 @@
 package com.swp391.evdealersystem.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * DTO chứa dữ liệu "phẳng" để in Phiếu Giao Xe.
- */
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class DeliverySlipDTO {
-
-    // Thông tin phiếu
     private Long orderId;
     private LocalDate deliveryDate;
-    private String salespersonName; // Tên nhân viên bán hàng
-
-    // Thông tin khách
+    private String salespersonName;
     private String customerName;
     private String customerAddress;
     private String customerPhone;
-
-    // Thông tin xe
     private String vehicleBrand;
     private String vehicleModelCode;
     private String vehicleColor;
     private String vehicleVin;
+
+    private BigDecimal vehiclePrice;
+    private BigDecimal amountPaid;
+    private BigDecimal remainingAmount;
 }

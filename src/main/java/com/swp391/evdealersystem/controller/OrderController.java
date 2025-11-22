@@ -89,6 +89,12 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{orderId}/deliver-now")
+    public ResponseEntity<OrderResponse> deliverNow(@PathVariable Long orderId) {
+        OrderResponse response = orderService.deliverOrderNow(orderId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{orderId}/delivery-slip")
     public ResponseEntity<byte[]> getDeliverySlip(@PathVariable Long orderId) {
 
@@ -106,19 +112,20 @@ public class OrderController {
     }
 
     @Transactional
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<CustomerWithOrdersResponse> getCustomerWithOrdersById(
+            @PathVariable Long customerId
+    ) {
 
-    public CustomerWithOrdersResponse getCustomerWithOrdersById(Long customerId) {
-        // Lấy thông tin khách hàng
         Customer customer = customerRepo.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + customerId));
 
-        // Lấy các đơn hàng của khách hàng
         List<OrderResponse> orders = orderRepo.findByCustomer_CustomerId(customerId).stream()
                 .map(mapper::toOrderResponse)
                 .collect(Collectors.toList());
 
-        // Chuyển thông tin khách hàng và đơn hàng sang DTO
-        return new CustomerWithOrdersResponse(customer, orders);
-    }
+        CustomerWithOrdersResponse response = new CustomerWithOrdersResponse(customer, orders);
 
+        return ResponseEntity.ok(response);
+    }
 }

@@ -20,6 +20,7 @@ public interface OrderService {
     List<OrderResponse> getByVehicleId(Long vehicleId);
 
     OrderResponse setDeliveryDate(Long orderId, UpdateDeliveryDateRequest request);
+    public OrderResponse deliverOrderNow(Long orderId);
     byte[] generateDeliverySlip(Long orderId);
     void delete(Long id);
     CustomerWithOrdersResponse getCustomerWithOrdersById(Long customerId);

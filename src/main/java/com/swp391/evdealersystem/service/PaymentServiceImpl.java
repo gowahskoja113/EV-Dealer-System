@@ -39,7 +39,6 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepo.findGraphByOrderId(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
-        // Idempotent: đã thanh toán đủ rồi thì trả về luôn
         if (order.getPaymentStatus() == OrderPaymentStatus.PAID) {
             return mapper.toOrderResponse(order);
         }
@@ -56,10 +55,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("amount must be > 0");
         }
 
-        // Mặc định coi là DEPOSIT nếu không truyền
         PaymentPurpose applyTo = (req.getApplyTo() != null) ? req.getApplyTo() : PaymentPurpose.DEPOSIT;
 
-        // Ghi sổ thanh toán tiền mặt (thành công ngay)
         Payment pay = Payment.builder()
                 .order(order)
                 .amount(paid)
@@ -71,7 +68,6 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
         paymentRepo.save(pay);
 
-        // Cập nhật số tiền đã TRẢ (depositAmount)
         BigDecimal newDeposit = deposit.add(paid);
         if (newDeposit.compareTo(price) > 0) newDeposit = price;
         order.setDepositAmount(newDeposit);
@@ -80,9 +76,16 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal planned = order.getPlannedDepositAmount() == null ? BigDecimal.ZERO : order.getPlannedDepositAmount();
 
         if (fullyPaid) {
-            // đủ tiền → PAID/COMPLETED + SOLD_OUT + trừ kho
             order.setPaymentStatus(OrderPaymentStatus.PAID);
-            order.setStatus(OrderStatus.COMPLETED);
+
+            order.setStatus(OrderStatus.ORDER_PAID);
+            if (order.getFullyPaidAt() == null) {
+                order.setFullyPaidAt(LocalDateTime.now());
+            }
+
+            if (order.getDepositPaidAt() == null) {
+                order.setDepositPaidAt(LocalDateTime.now());
+            }
 
             Customer customer = order.getCustomer();
             if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
@@ -111,14 +114,19 @@ public class PaymentServiceImpl implements PaymentService {
                 warehouseRepo.save(wh);
             }
         } else {
+
             if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                 order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
+
+                if (order.getDepositPaidAt() == null) {
+                    order.setDepositPaidAt(LocalDateTime.now());
+                }
+
             } else {
                 order.setPaymentStatus(OrderPaymentStatus.UNPAID);
             }
             order.setStatus(OrderStatus.PROCESSING);
         }
-
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
     }
@@ -143,7 +151,6 @@ public class PaymentServiceImpl implements PaymentService {
             if (planned == null || planned.signum() <= 0) {
                 throw new IllegalStateException("No planned deposit on order.");
             }
-            // nếu đã cọc 1 phần, chỉ thu phần còn lại của kế hoạch
             toPay = planned.subtract(deposit);
             if (toPay.signum() <= 0) {
                 throw new IllegalStateException("Planned deposit already satisfied.");
@@ -155,7 +162,6 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
-        // tạo Payment PENDING
         Payment p = Payment.builder()
                 .order(order)
                 .amount(toPay)
@@ -185,11 +191,11 @@ public class PaymentServiceImpl implements PaymentService {
             return VnpIpnResponse.fail("97", "Invalid signature");
         }
 
-        String rsp = params.get("vnp_ResponseCode"); // "00" success
-        String txnRef = params.get("vnp_TxnRef");    // = paymentId
+        String rsp = params.get("vnp_ResponseCode");
+        String txnRef = params.get("vnp_TxnRef");
         String transNo = params.get("vnp_TransactionNo");
         String payDate = params.get("vnp_PayDate");
-        long amount = Long.parseLong(params.get("vnp_Amount")); // x100
+        long amount = Long.parseLong(params.get("vnp_Amount"));
 
         var payment = paymentRepo.findByTransactionRef(txnRef)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found for vnp_TxnRef=" + txnRef));
@@ -212,7 +218,6 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setPaymentDate(LocalDateTime.now());
             paymentRepo.save(payment);
 
-            // cập nhật Order tương tự phần mình đã hướng dẫn (DEPOSIT/REMAINING)
             var order = payment.getOrder();
             var serial = order.getSerial();
 
@@ -224,20 +229,37 @@ public class PaymentServiceImpl implements PaymentService {
                 var planned = order.getPlannedDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getPlannedDepositAmount();
                 if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                     order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
+
+                    if (order.getDepositPaidAt() == null) {
+                        order.setDepositPaidAt(LocalDateTime.now());
+                    }
+
                 } else {
-                    order.setPaymentStatus(OrderPaymentStatus.UNPAID); // hoặc PARTIAL nếu bạn có enum
+                    order.setPaymentStatus(OrderPaymentStatus.UNPAID);
                 }
                 order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.PROCESSING);
                 orderRepo.save(order);
 
             } else if (payment.getType() == PaymentPurpose.REMAINING) {
+
                 order.setPaymentStatus(OrderPaymentStatus.PAID);
-                order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
+
+                // *** THAY ĐỔI LOGIC ***
+                order.setStatus(OrderStatus.ORDER_PAID);
+
+                if (order.getFullyPaidAt() == null) {
+                    order.setFullyPaidAt(LocalDateTime.now());
+                }
+                // Nếu thanh toán phần còn lại mà chưa set ngày cọc
+                if (order.getDepositPaidAt() == null) {
+                    order.setDepositPaidAt(LocalDateTime.now());
+                }
+                // *** KẾT THÚC THAY ĐỔI ***
 
                 Customer customer = order.getCustomer();
                 if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
                     customer.setStatus(CustomerStatus.CUSTOMER);
-                    customerRepo.save(customer); // Lưu lại thay đổi của Customer
+                    customerRepo.save(customer);
                 }
 
                 if (serial != null && serial.getStatus() != VehicleStatus.SOLD_OUT) {
@@ -245,6 +267,7 @@ public class PaymentServiceImpl implements PaymentService {
                     serial.setHoldUntil(null);
                     serialRepo.save(serial);
 
+                    // ... (Logic trừ kho của bạn) ...
                     Long whId = serial.getWarehouse().getWarehouseId();
                     Long modelId = serial.getModel().getModelId();
 

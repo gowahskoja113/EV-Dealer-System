@@ -1,6 +1,5 @@
 package com.swp391.evdealersystem.dto.response;
 
-import com.swp391.evdealersystem.entity.Order;
 import com.swp391.evdealersystem.enums.*;
 import lombok.*;
 
@@ -28,4 +27,6 @@ public class OrderResponse {
     private LocalDate deliveryDate;
     private LocalDateTime orderDate;
 
+    private LocalDateTime depositPaidAt;
+    private LocalDateTime fullyPaidAt;
 }
