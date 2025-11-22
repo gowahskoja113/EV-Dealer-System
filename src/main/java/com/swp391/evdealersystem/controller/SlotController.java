@@ -19,7 +19,6 @@ public class SlotController {
 
     /**
      * Tạo slot mới
-     * POST /api/slots
      */
     @PostMapping
     public Slot createSlot(@Valid @RequestBody Slot slot) {
@@ -28,12 +27,9 @@ public class SlotController {
 
     /**
      * Lấy tất cả slot
-     * GET /api/slots
      */
     @GetMapping
     public List<Slot> getAllSlots() {
-        // vì service chưa có getAll, nên tạm lấy theo range rộng nếu bạn cần
-        // hoặc bạn thêm getAllSlots() trong service/repo sau
         return slotService.getSlotsByTimeRange(
                 LocalDateTime.MIN.plusYears(2000),
                 LocalDateTime.MAX.minusYears(2000)
@@ -42,7 +38,6 @@ public class SlotController {
 
     /**
      * Lấy slot theo id
-     * GET /api/slots/{id}
      */
     @GetMapping("/{id}")
     public Slot getSlotById(@PathVariable Long id) {
@@ -51,7 +46,6 @@ public class SlotController {
 
     /**
      * Lấy danh sách slot theo khoảng thời gian
-     * GET /api/slots/range?startTime=...&endTime=...
      */
     @GetMapping("/range")
     public List<Slot> getSlotsByRange(
@@ -63,7 +57,6 @@ public class SlotController {
 
     /**
      * Cập nhật slot
-     * PUT /api/slots/{id}
      */
     @PutMapping("/{id}")
     public Slot updateSlot(
@@ -75,7 +68,6 @@ public class SlotController {
 
     /**
      * Xóa slot
-     * DELETE /api/slots/{id}
      */
     @DeleteMapping("/{id}")
     public void deleteSlot(@PathVariable Long id) {
@@ -84,7 +76,6 @@ public class SlotController {
 
     /**
      * Check còn chỗ lái thử không
-     * GET /api/slots/{id}/available-testdrive
      */
     @GetMapping("/{id}/available-testdrive")
     public boolean availableForTestDrive(@PathVariable Long id) {
@@ -93,7 +84,6 @@ public class SlotController {
 
     /**
      * Check còn chỗ bảo dưỡng không
-     * GET /api/slots/{id}/available-service
      */
     @GetMapping("/{id}/available-service")
     public boolean availableForService(@PathVariable Long id) {

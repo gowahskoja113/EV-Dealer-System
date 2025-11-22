@@ -4,15 +4,12 @@ import com.swp391.evdealersystem.dto.request.AppointmentRequest;
 import com.swp391.evdealersystem.dto.request.UpdateAppointmentStatusRequest;
 import com.swp391.evdealersystem.entity.Appointment;
 import com.swp391.evdealersystem.entity.Customer;
-import com.swp391.evdealersystem.entity.ServiceEntity;
 import com.swp391.evdealersystem.entity.Slot;
 import com.swp391.evdealersystem.enums.ServiceType;
 import com.swp391.evdealersystem.mapper.AppointmentMapper;
 import com.swp391.evdealersystem.repository.AppointmentRepository;
 import com.swp391.evdealersystem.repository.SlotRepository;
-import com.swp391.evdealersystem.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -79,7 +76,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointment.getService() != null) {
             if (appointment.getService().getServiceType() == ServiceType.TEST_DRIVE) {
                 slot.decrementTestDriveCount();  // Giảm số lượng lái thử
-            } else if (appointment.getService().getServiceType() == ServiceType.SERVICE) {
+            } else if (appointment.getService().getServiceType() == ServiceType.MAINTENANCE) {
                 slot.decrementServiceCount();  // Giảm số lượng bảo dưỡng
             }
         }

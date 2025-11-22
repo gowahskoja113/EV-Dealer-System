@@ -1,18 +1,14 @@
 package com.swp391.evdealersystem.controller;
-
 import com.swp391.evdealersystem.dto.request.AppointmentRequest;
 import com.swp391.evdealersystem.dto.request.UpdateAppointmentStatusRequest;
 import com.swp391.evdealersystem.dto.response.AppointmentResponse;
 import com.swp391.evdealersystem.entity.Appointment;
-import com.swp391.evdealersystem.entity.Customer;
 import com.swp391.evdealersystem.repository.AppointmentRepository;
 import com.swp391.evdealersystem.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -54,7 +50,7 @@ public class AppointmentController {
 
     @GetMapping("/{id}")
     public Appointment getById(@PathVariable Long id) {
-        return repo.findById(id).orElse(null); // cần NotFound thì throw tùy bạn
+        return repo.findById(id).orElse(null);
     }
 
 
