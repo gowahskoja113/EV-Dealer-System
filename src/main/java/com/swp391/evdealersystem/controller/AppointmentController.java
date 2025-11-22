@@ -68,4 +68,9 @@ public class AppointmentController {
 
         service.updateStatus(id, req);
     }
+
+    @GetMapping
+    public List<Appointment> getAll() {
+        return service.getAllAppointments();
+    }
 }

@@ -28,4 +28,7 @@ public interface AppointmentService {
 
     // Cập nhật trạng thái của cuộc hẹn
     void updateStatus(Long appointmentId, UpdateAppointmentStatusRequest req);
+
+    //get all appointments
+    List<Appointment> getAllAppointments();
 }

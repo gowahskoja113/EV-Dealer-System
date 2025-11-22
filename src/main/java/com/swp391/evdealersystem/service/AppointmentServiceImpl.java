@@ -107,6 +107,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointmentRepository.save(appointment);
     }
 
+    @Override
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
+    }
+
 //    @Override
 //    public long remainingSlots(Long serviceId, LocalDateTime startAt, LocalDateTime endAt) {
 //        return 10 - appointmentRepository.countAppointmentsInSlot(serviceId, startAt, endAt); // Giới hạn 10 slot
