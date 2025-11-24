@@ -28,9 +28,16 @@ public class UserMapper {
         r.setPhoneNumber(u.getPhoneNumber());
         r.setEmail(u.getEmail());
         r.setAddress(u.getAddress());
+
         if (u.getRole() != null) {
             r.setRoleName(u.getRole().getRoleName());
         }
+
+        if (u.getDealership() != null) {
+            r.setDealershipId(u.getDealership().getDealershipId());
+            r.setDealershipName(u.getDealership().getName());
+        }
+
         return r;
     }
 }

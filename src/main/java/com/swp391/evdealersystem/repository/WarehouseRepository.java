@@ -24,4 +24,12 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
            where w.warehouseId = :warehouseId
            """)
     Optional<Warehouse> findHeaderById(Long warehouseId);
+
+    @Query("""
+           select w
+           from Warehouse w
+           where w.dealership.dealershipId = :dealershipId
+           order by w.warehouseId
+           """)
+    List<Warehouse> findHeadersByDealershipId(Long dealershipId);
 }

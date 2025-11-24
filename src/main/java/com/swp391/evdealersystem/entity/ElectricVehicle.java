@@ -58,6 +58,4 @@ public class ElectricVehicle {
             return status == VehicleStatus.AVAILABLE;
         }
     }
-
-
 }

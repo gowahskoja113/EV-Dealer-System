@@ -27,6 +27,10 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealership_id")
+    private Dealership dealership;
+
     @OneToMany(mappedBy = "assignedUser")
     private List<Appointment> appointments = new ArrayList<>();
 

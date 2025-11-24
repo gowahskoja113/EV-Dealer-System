@@ -3,5 +3,6 @@
     public enum VehicleStatus {
         AVAILABLE,
         HOLD,
+        DELIVERED,
         SOLD_OUT
     }

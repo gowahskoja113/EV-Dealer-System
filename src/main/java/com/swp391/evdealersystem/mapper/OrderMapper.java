@@ -23,7 +23,7 @@ public class OrderMapper {
             res.setVehicleId(order.getSerial().getVehicle().getVehicleId());
 
             if (order.getSerial().getVehicle().getModel() != null) {
-                res.setVehicleModel(order.getSerial().getVehicle().getModel().getBrand());
+                res.setVehicleModel(order.getSerial().getVehicle().getModel().getModelCode());
             }
         } else {
 

@@ -9,5 +9,9 @@ public class UserResponse {
     private String phoneNumber;
     private String email;
     private String address;
-    private String roleName; // lấy từ Role
+    private String roleName;
+
+    // --- BỔ SUNG ---
+    private Long dealershipId;
+    private String dealershipName;
 }

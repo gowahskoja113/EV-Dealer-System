@@ -17,8 +17,11 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -33,10 +36,39 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final VehicleSerialRepository vehicleSerialRepository;
     private final VinGenerator vinGenerator;
     private final DealershipRepository dealershipRepository;
+    private final UserRepository userRepository;
+
+    public User getCurrentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    private void validateWarehouseAccess(Warehouse w, User user) {
+        // 1. Admin quyền lực tối cao -> Cho qua
+        if (user.getRole().getRoleName().equalsIgnoreCase("ROLE_ADMIN")) {
+            return;
+        }
+
+        // 2. Nếu User không thuộc Dealership nào (Khách hàng/User tự do) -> CHẶN
+        if (user.getDealership() == null) {
+            throw new AccessDeniedException("Bạn không có quyền truy cập hoặc chỉnh sửa kho hàng.");
+        }
+
+        // 3. Nếu User có Dealership -> So sánh ID Dealer của User và của Kho
+        Long userDealerId = user.getDealership().getDealershipId();
+        Long warehouseDealerId = w.getDealership().getDealershipId();
+
+        if (!userDealerId.equals(warehouseDealerId)) {
+            throw new AccessDeniedException("Bạn không có quyền thao tác trên kho của Đại lý khác!");
+        }
+    }
 
     @Override
     @Transactional
     public WarehouseResponse create(WarehouseRequest request) {
+
         if (warehouseRepo.existsByWarehouseLocation(request.getWarehouseLocation())) {
             throw new IllegalArgumentException("Warehouse location already exists");
         }
@@ -46,6 +78,14 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         if (dealership.getStatus() == DealershipStatus.INACTIVE) {
             throw new IllegalStateException("Không thể tạo kho mới cho Đại lý đang ngừng hoạt động (INACTIVE).");
+        }
+
+        User currentUser = getCurrentUser();
+        if (!currentUser.getRole().getRoleName().equalsIgnoreCase("ROLE_ADMIN")) {
+            if (currentUser.getDealership() == null ||
+                    !currentUser.getDealership().getDealershipId().equals(dealership.getDealershipId())) {
+                throw new AccessDeniedException("Bạn chỉ được phép tạo kho cho Đại lý của mình.");
+            }
         }
 
         Warehouse warehouse = mapper.toEntity(request);
@@ -61,6 +101,8 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
+        validateWarehouseAccess(w, getCurrentUser());
+
         var flats = stockRepo.findFlatByWarehouseId(id);
 
         var res = new WarehouseResponse();
@@ -69,7 +111,6 @@ public class WarehouseServiceImpl implements WarehouseService {
         res.setWarehouseLocation(w.getWarehouseLocation());
         res.setDealershipId(w.getDealership().getDealershipId());
         res.setVehicleQuantity(flats.stream().mapToInt(WarehouseStockFlat::quantity).sum());
-
         res.setMaxCapacity(w.getMaxCapacity());
 
         res.setItems(flats.stream().map(f -> {
@@ -79,9 +120,11 @@ public class WarehouseServiceImpl implements WarehouseService {
             r.setColor(f.color());
             r.setProductionYear(f.productionYear());
             r.setQuantity(f.quantity());
+
             var serials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(
                             f.modelId(), w.getWarehouseId());
+
             List<VehicleSerialResponse> serialDetails = serials.stream()
                     .map(vs -> new VehicleSerialResponse(
                             vs.getVin(),
@@ -98,7 +141,20 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public List<WarehouseResponse> getAll() {
-        List<Warehouse> headers = warehouseRepo.findAllHeaders();
+        User user = getCurrentUser();
+        List<Warehouse> headers;
+
+        // [TỐI ƯU] Check user trước, sau đó mới gọi DB
+        if (user.getRole().getRoleName().equalsIgnoreCase("ROLE_ADMIN")) {
+            headers = warehouseRepo.findAllHeaders(); // Admin xem hết
+        } else if (user.getDealership() != null) {
+            // Staff chỉ xem kho của Dealer mình
+            headers = warehouseRepo.findHeadersByDealershipId(user.getDealership().getDealershipId());
+        } else {
+
+            headers = new ArrayList<>();
+        }
+
         return headers.stream().map(w -> {
             var flats = stockRepo.findFlatByWarehouseId(w.getWarehouseId());
             var res = new WarehouseResponse();
@@ -127,6 +183,9 @@ public class WarehouseServiceImpl implements WarehouseService {
     public WarehouseResponse update(Long id, WarehouseRequest request) {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
+
+        validateWarehouseAccess(w, getCurrentUser());
+
         mapper.updateEntity(w, request);
         warehouseRepo.save(w);
 
@@ -138,6 +197,9 @@ public class WarehouseServiceImpl implements WarehouseService {
     public void delete(Long id) {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
+
+        validateWarehouseAccess(w, getCurrentUser());
+
         warehouseRepo.delete(w);
     }
 
@@ -146,6 +208,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     public WarehouseResponse upsertStock(Long warehouseId, WarehouseStockRequest request) {
         Warehouse wh = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
+
+        validateWarehouseAccess(wh, getCurrentUser());
 
         Model model = modelRepository.findByModelCode(request.getModelCode())
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + request.getModelCode()));
@@ -192,17 +256,13 @@ public class WarehouseServiceImpl implements WarehouseService {
         }
 
         final int WAREHOUSE_CAPACITY_LIMIT = wh.getMaxCapacity();
-
         int currentTotal = stockRepo.sumQuantityByWarehouseId(wh.getWarehouseId());
-
         int projectedTotal = (currentTotal - oldQty) + newQty;
 
         if (projectedTotal > WAREHOUSE_CAPACITY_LIMIT) {
             throw new IllegalArgumentException(
-                    "Warehouse capacity exceeded. Limit for this warehouse is " + WAREHOUSE_CAPACITY_LIMIT +
-                            ". Current (other models): " + (currentTotal - oldQty) +
-                            ", Trying to set this model to: " + newQty +
-                            ", Projected Total: " + projectedTotal
+                    "Warehouse capacity exceeded. Limit: " + WAREHOUSE_CAPACITY_LIMIT +
+                            ". Projected: " + projectedTotal
             );
         }
 
@@ -216,11 +276,11 @@ public class WarehouseServiceImpl implements WarehouseService {
             int year = model.getProductionYear();
             Long vehicleId = ev.getVehicleId();
             long dealerShipId = wh.getDealership().getDealershipId();
-            warehouseId = wh.getWarehouseId();
+            Long whId = wh.getWarehouseId();
 
             for (int i = 1; i <= delta; i++) {
                 int seq = startSeq + i;
-                String vin = vinGenerator.buildVin(year, dealerShipId, warehouseId, vehicleId, colorLetter, seq);
+                String vin = vinGenerator.buildVin(year, dealerShipId, whId, vehicleId, colorLetter, seq);
                 VehicleSerial vs = new VehicleSerial();
                 vs.setVehicle(ev);
                 vs.setModel(model);
@@ -232,7 +292,6 @@ public class WarehouseServiceImpl implements WarehouseService {
                 vehicleSerialRepository.save(vs);
             }
         } else if (delta < 0) {
-
             int needRemove = -delta;
             var lastSerials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
@@ -251,6 +310,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     public WarehouseResponse removeStock(Long warehouseId, String modelCode) {
         Warehouse w = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
+
+        validateWarehouseAccess(w, getCurrentUser());
 
         Model m = modelRepository.findByModelCode(modelCode)
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + modelCode));

@@ -30,5 +30,5 @@ public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Lo
     boolean existsByVin(String vin);
     Optional<VehicleSerial> findByVin(String vin);
 
-
+    List<VehicleSerial> findByWarehouse_Dealership_DealershipId(Long dealershipId);
 }

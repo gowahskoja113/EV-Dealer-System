@@ -2,9 +2,11 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.UserRequest;
 import com.swp391.evdealersystem.dto.response.UserResponse;
+import com.swp391.evdealersystem.entity.Dealership;
 import com.swp391.evdealersystem.entity.Role;
 import com.swp391.evdealersystem.entity.User;
 import com.swp391.evdealersystem.mapper.UserMapper;
+import com.swp391.evdealersystem.repository.DealershipRepository;
 import com.swp391.evdealersystem.repository.RoleRepository;
 import com.swp391.evdealersystem.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,14 +22,19 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DealershipRepository dealershipRepository; // Bổ sung repository
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+    // Nhớ thêm DealershipRepository vào Constructor
     public UserServiceImpl(UserRepository userRepository,
                            RoleRepository roleRepository,
-                           UserMapper userMapper, PasswordEncoder passwordEncoder) {
+                           DealershipRepository dealershipRepository,
+                           UserMapper userMapper,
+                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.dealershipRepository = dealershipRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
     }
@@ -39,13 +46,19 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userMapper.toEntity(request);
-        user.setUserId(null); // ép về null để chắc chắn là insert
+        user.setUserId(null);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new RuntimeException("Role not found"));
             user.setRole(role);
+        }
+
+        if (request.getDealershipId() != null) {
+            Dealership dealership = dealershipRepository.findById(request.getDealershipId())
+                    .orElseThrow(() -> new RuntimeException("Dealership not found"));
+            user.setDealership(dealership);
         }
 
         User saved = userRepository.save(user);
@@ -76,7 +89,7 @@ public class UserServiceImpl implements UserService {
         if (request.getEmail() != null) existing.setEmail(request.getEmail());
         if (request.getAddress() != null) existing.setAddress(request.getAddress());
 
-        if (request.getPassword() != null) {
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existing.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
@@ -84,6 +97,12 @@ public class UserServiceImpl implements UserService {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new RuntimeException("Role not found"));
             existing.setRole(role);
+        }
+
+        if (request.getDealershipId() != null) {
+            Dealership dealership = dealershipRepository.findById(request.getDealershipId())
+                    .orElseThrow(() -> new RuntimeException("Dealership not found"));
+            existing.setDealership(dealership);
         }
 
         User saved = userRepository.save(existing);
