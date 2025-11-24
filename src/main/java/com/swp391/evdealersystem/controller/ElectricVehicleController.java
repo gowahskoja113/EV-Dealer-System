@@ -84,13 +84,12 @@ public class ElectricVehicleController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/import-excel")
-    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/import-vehicle-type-excel")
+    public ResponseEntity<?> importVehicleTypeExcel(@RequestParam("file") MultipartFile file) {
         try {
-            service.importExcel(file);
-            return ResponseEntity.ok("Import thành công!");
+            service.importVehicleTypeExcel(file);
+            return ResponseEntity.ok("Import loại xe (Model + EV) thành công!");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Import lỗi: " + e.getMessage());
         }
-    }
-}
+} }

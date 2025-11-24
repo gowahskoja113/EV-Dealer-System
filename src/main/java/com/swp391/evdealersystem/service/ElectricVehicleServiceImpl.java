@@ -97,54 +97,62 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
         evRepo.deleteById(vehicleId);
     }
 
+    @Transactional
     @Override
-    public void importExcel(MultipartFile file) throws Exception {
+    public void importVehicleTypeExcel(MultipartFile file) throws Exception {
         Workbook workbook = WorkbookFactory.create(file.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
 
-        List<ElectricVehicle> toSave = new ArrayList<>();
+        int saved = 0, skipped = 0;
 
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) { // bỏ header
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null) continue;
 
             String modelCode = getString(row.getCell(0));
-            if (modelCode == null || modelCode.isBlank()) continue;
+            if (modelCode == null || modelCode.isBlank()) {
+                skipped++;
+                continue;
+            }
+            modelCode = modelCode.trim();
 
-            // tìm model theo modelCode
-            Model model = modelRepo.findByModelCode(modelCode.trim()).orElse(null);
-            if (model == null) continue;
+            // ======= 1) UPSERT MODEL =======
+            Model model = modelRepo.findByModelCode(modelCode)
+                    .orElseGet(Model::new);
 
-            BigDecimal cost = getBigDecimal(row.getCell(1));
-            BigDecimal price = getBigDecimal(row.getCell(2));
-            Integer battery = getInteger(row.getCell(3));
-            String imageUrl = getString(row.getCell(4));
-            String statusStr = getString(row.getCell(5));
+            model.setModelCode(modelCode);
+            model.setBrand(getString(row.getCell(1)));
+            model.setColor(getString(row.getCell(2)));
+            model.setProductionYear(getInteger(row.getCell(3)));
 
-            // unique model_id => nếu đã có EV theo modelCode thì UPDATE
-            ElectricVehicle ev = evRepo.findByModel_ModelCode(modelCode.trim())
-                    .orElse(new ElectricVehicle());
+            model = modelRepo.save(model);
+
+            // ======= 2) UPSERT ELECTRIC_VEHICLE =======
+            ElectricVehicle ev = evRepo.findByModel_ModelCode(modelCode)
+                    .orElseGet(ElectricVehicle::new);
 
             ev.setModel(model);
-            ev.setCost(cost != null ? cost : BigDecimal.ZERO);
-            ev.setPrice(price != null ? price : BigDecimal.ZERO);
-            ev.setBatteryCapacity(battery != null ? battery : 0);
-            ev.setImageUrl(imageUrl);
+            ev.setCost(getBigDecimal(row.getCell(4)));
+            ev.setPrice(getBigDecimal(row.getCell(5)));
+            ev.setBatteryCapacity(getInteger(row.getCell(6)));
+            ev.setImageUrl(getString(row.getCell(7)));
 
+            String statusStr = getString(row.getCell(8));
             if (statusStr != null && !statusStr.isBlank()) {
                 ev.setStatus(VehicleStatus.valueOf(statusStr.trim().toUpperCase()));
             } else if (ev.getStatus() == null) {
                 ev.setStatus(VehicleStatus.AVAILABLE);
             }
 
-            toSave.add(ev);
+            evRepo.save(ev);
+            saved++;
         }
 
-        evRepo.saveAll(toSave);
         workbook.close();
+        System.out.println("IMPORT VEHICLE_TYPE DONE saved=" + saved + " skipped=" + skipped);
     }
 
-    // ========== helper ==========
+    // ===== helper parse =====
     private String getString(Cell cell) {
         if (cell == null) return null;
         cell.setCellType(CellType.STRING);
@@ -162,12 +170,18 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
 
     private BigDecimal getBigDecimal(Cell cell) {
         if (cell == null) return null;
+
         if (cell.getCellType() == CellType.NUMERIC) {
             return BigDecimal.valueOf(cell.getNumericCellValue());
         }
+
         String s = getString(cell);
-        return (s == null || s.isBlank())
-                ? null
-                : new BigDecimal(s.replace(",", ""));
+        if (s == null || s.isBlank()) return null;
+
+        s = s.replace(",", "");
+
+        return new BigDecimal(s);
     }
+
 }
+

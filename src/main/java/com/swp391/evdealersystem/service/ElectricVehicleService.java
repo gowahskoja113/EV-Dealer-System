@@ -13,5 +13,5 @@ public interface ElectricVehicleService {
     List<ElectricVehicleResponse> getByModelCode(String modelName);
     ElectricVehicleResponse update(Long vehicleId, ElectricVehicleRequest request);
     void delete(Long id);
-    void importExcel(MultipartFile file) throws Exception;
+    void importVehicleTypeExcel(MultipartFile file) throws Exception;
 }
