@@ -5,6 +5,7 @@ import com.swp391.evdealersystem.dto.response.DealershipResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseSummaryDTO;
 import com.swp391.evdealersystem.entity.Dealership;
 import com.swp391.evdealersystem.entity.Warehouse;
+import com.swp391.evdealersystem.enums.DealershipStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -12,7 +13,6 @@ import java.util.stream.Collectors;
 @Component
 public class DealershipMapper {
 
-    // 1. Dùng cho việc TẠO MỚI (Create)
     public Dealership toEntity(DealershipRequest request) {
         if (request == null) {
             return null;
@@ -22,6 +22,7 @@ public class DealershipMapper {
         dealership.setName(request.getName());
         dealership.setAddress(request.getAddress());
         dealership.setPhoneNumber(request.getPhoneNumber());
+        dealership.setStatus(DealershipStatus.ACTIVE);
         return dealership;
     }
 
@@ -35,7 +36,6 @@ public class DealershipMapper {
         dealership.setPhoneNumber(request.getPhoneNumber());
     }
 
-    // 3. Dùng cho việc TRẢ VỀ (Response)
     public DealershipResponse toResponse(Dealership dealership) {
         if (dealership == null) {
             return null;
@@ -46,13 +46,13 @@ public class DealershipMapper {
         response.setName(dealership.getName());
         response.setAddress(dealership.getAddress());
         response.setPhoneNumber(dealership.getPhoneNumber());
+        response.setStatus(dealership.getStatus());
 
-        // Chuyển đổi danh sách Warehouse (Entity) sang WarehouseResponseDTO
         if (dealership.getWarehouses() != null) {
             response.setWarehouses(
                     dealership.getWarehouses()
                             .stream()
-                            .map(this::toWarehouseResponseDTO) // Gọi hàm helper
+                            .map(this::toWarehouseResponseDTO)
                             .collect(Collectors.toList())
             );
         }

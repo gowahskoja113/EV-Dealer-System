@@ -244,17 +244,15 @@ public class PaymentServiceImpl implements PaymentService {
 
                 order.setPaymentStatus(OrderPaymentStatus.PAID);
 
-                // *** THAY ĐỔI LOGIC ***
                 order.setStatus(OrderStatus.ORDER_PAID);
 
                 if (order.getFullyPaidAt() == null) {
                     order.setFullyPaidAt(LocalDateTime.now());
                 }
-                // Nếu thanh toán phần còn lại mà chưa set ngày cọc
+
                 if (order.getDepositPaidAt() == null) {
                     order.setDepositPaidAt(LocalDateTime.now());
                 }
-                // *** KẾT THÚC THAY ĐỔI ***
 
                 Customer customer = order.getCustomer();
                 if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
@@ -267,7 +265,6 @@ public class PaymentServiceImpl implements PaymentService {
                     serial.setHoldUntil(null);
                     serialRepo.save(serial);
 
-                    // ... (Logic trừ kho của bạn) ...
                     Long whId = serial.getWarehouse().getWarehouseId();
                     Long modelId = serial.getModel().getModelId();
 

@@ -17,10 +17,12 @@ public class OrderScheduledTasks {
 
     private final OrderRepository orderRepo;
 
-    @Scheduled(cron = "0 0 1 * * ?")
+//"0 0 1 * * ?" (1h sáng).
+    @Scheduled(cron = "0 * * * * ?")
     @Transactional
     public void autoCompleteDeliveringOrders() {
         LocalDate today = LocalDate.now();
+        System.out.println("---- [SCHEDULER] Đang quét đơn hàng đến hạn giao ngày: " + today + " ----");
 
         List<Order> ordersToComplete = orderRepo.findAllByStatusAndDeliveryDateLessThanEqual(
                 OrderStatus.DELIVERING,
@@ -30,8 +32,14 @@ public class OrderScheduledTasks {
         if (!ordersToComplete.isEmpty()) {
             for (Order order : ordersToComplete) {
                 order.setStatus(OrderStatus.COMPLETED);
+                System.out.println("-> Auto Complete Order ID: " + order.getOrderId());
             }
+
             orderRepo.saveAll(ordersToComplete);
+
+            System.out.println("-> Đã lưu thành công " + ordersToComplete.size() + " đơn hàng.");
+        } else {
+            System.out.println("-> Không có đơn hàng nào cần xử lý.");
         }
     }
 }

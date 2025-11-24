@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.dto.request;
 
+import com.swp391.evdealersystem.enums.DealershipStatus;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class DealershipRequest {
 
     @Size(max = 20)
     private String phoneNumber;
+
 }

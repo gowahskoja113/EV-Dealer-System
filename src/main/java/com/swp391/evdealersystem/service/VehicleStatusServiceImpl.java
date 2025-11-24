@@ -18,12 +18,6 @@ public class VehicleStatusServiceImpl implements VehicleStatusService {
 
     private final ElectricVehicleRepository repo;
 
-    // Đã bỏ phương thức placeHold(Long vehicleId, long holdMinutes)
-    // vì nó phụ thuộc vào holdUntil và trạng thái HOLD
-
-    // Đã bỏ phương thức releaseHoldIfExpired(Long vehicleId)
-    // vì nó phụ thuộc vào holdUntil và trạng thái HOLD
-
     @Override
     @Transactional
     public ElectricVehicle markSoldOut(Long vehicleId) {
