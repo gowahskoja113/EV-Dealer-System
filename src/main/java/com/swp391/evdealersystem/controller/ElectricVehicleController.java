@@ -2,7 +2,6 @@ package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
-import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
