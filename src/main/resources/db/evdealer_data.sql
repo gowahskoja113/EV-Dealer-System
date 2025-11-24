@@ -28,9 +28,9 @@ GO
 ------------------------------------------------------------
 -- DEALERSHIP
 ------------------------------------------------------------
-INSERT INTO dealership ([address], [name], phone_number)
+INSERT INTO dealership ([address], [name], phone_number, status)
 VALUES
-    (N'123 Phố Huế, Hà Nội', N'EV Dealer Hà Nội', N'024-1111-2222');
+    (N'123 Phố Huế, Hà Nội', N'EV Dealer Hà Nội', N'024-1111-2222', 'ACTIVE');
 GO
 -- dealership_id = 1
 

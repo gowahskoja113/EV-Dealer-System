@@ -19,12 +19,6 @@ public class ContractServiceImpl implements ContractService {
     private final OrderRepository orderRepo;
     private final PdfGenerationService pdfGenerationService; // Inject service mới
 
-    // === Đọc thông tin Bên B từ application.properties ===
-    // (Lưu ý: Bạn có thể giữ lại các @Value ở đây, hoặc chuyển hẳn sang PdfGenerationServiceImpl)
-    // (Tôi đã chuyển chúng sang PdfGenerationServiceImpl, nên xóa ở đây đi)
-
-    // XÓA HẾT CÁC @Value ở đây
-    // XÓA HẾT CÁC HẰNG SỐ FORMATTER ở đây
 
     @Override
     @Transactional(readOnly = true)

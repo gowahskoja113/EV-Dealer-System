@@ -7,6 +7,7 @@ import com.swp391.evdealersystem.dto.response.WarehouseResponse;
 import com.swp391.evdealersystem.dto.response.WarehouseStockFlat;
 import com.swp391.evdealersystem.dto.response.WarehouseStockResponse;
 import com.swp391.evdealersystem.entity.*;
+import com.swp391.evdealersystem.enums.DealershipStatus;
 import com.swp391.evdealersystem.enums.QtyMode;
 import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.WarehouseMapper;
@@ -39,17 +40,17 @@ public class WarehouseServiceImpl implements WarehouseService {
         if (warehouseRepo.existsByWarehouseLocation(request.getWarehouseLocation())) {
             throw new IllegalArgumentException("Warehouse location already exists");
         }
-        // 1. Tìm Dealership
+
         Dealership dealership = dealershipRepository.findById(request.getDealershipId())
                 .orElseThrow(() -> new EntityNotFoundException("Dealership not found with ID: " + request.getDealershipId()));
 
-        // 2. Chuyển đổi DTO sang Entity (như cũ)
+        if (dealership.getStatus() == DealershipStatus.INACTIVE) {
+            throw new IllegalStateException("Không thể tạo kho mới cho Đại lý đang ngừng hoạt động (INACTIVE).");
+        }
+
         Warehouse warehouse = mapper.toEntity(request);
+        warehouse.setDealership(dealership);
 
-        // 3. Gán quan hệ
-        warehouse.setDealership(dealership); // <-- Đây là bước quan trọng nhất
-
-        // 4. Lưu và trả về (như cũ)
         Warehouse saved = warehouseRepo.save(warehouse);
         return mapper.toResponse(saved);
     }
@@ -152,7 +153,10 @@ public class WarehouseServiceImpl implements WarehouseService {
         ElectricVehicle ev = vehicleRepo.findByModel_ModelCode(request.getModelCode())
                 .orElseThrow(() -> new IllegalStateException("Chưa tạo xe đại diện cho model " + request.getModelCode()));
 
-        // lấy/khởi tạo stock
+        if (wh.getDealership().getStatus() == DealershipStatus.INACTIVE) {
+            throw new IllegalStateException("This dealership is INACTIVE, cannot update warehouse stock.");
+        }
+
         WarehouseStock stock = stockRepo.findByWarehouseAndModel(wh, model)
                 .orElseGet(() -> {
                     WarehouseStock s = new WarehouseStock();
@@ -228,7 +232,7 @@ public class WarehouseServiceImpl implements WarehouseService {
                 vehicleSerialRepository.save(vs);
             }
         } else if (delta < 0) {
-            // ... (Logic xóa VIN của bạn giữ nguyên) ...
+
             int needRemove = -delta;
             var lastSerials = vehicleSerialRepository
                     .findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
@@ -236,7 +240,6 @@ public class WarehouseServiceImpl implements WarehouseService {
             vehicleSerialRepository.deleteAll(lastSerials);
         }
 
-        // Cập nhật tổng số lượng của Warehouse (dùng luôn số đã tính cho tối ưu)
         wh.setVehicleQuantity(projectedTotal);
         warehouseRepo.save(wh);
 

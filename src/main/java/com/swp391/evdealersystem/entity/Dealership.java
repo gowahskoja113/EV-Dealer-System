@@ -1,6 +1,7 @@
 package com.swp391.evdealersystem.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.swp391.evdealersystem.enums.DealershipStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,12 +29,16 @@ public class Dealership {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private DealershipStatus status = DealershipStatus.ACTIVE;
+
     @OneToMany(
             mappedBy = "dealership",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    @JsonIgnore // Tránh lặp vô hạn khi serialize JSON
+    @JsonIgnore
     private List<Warehouse> warehouses = new ArrayList<>();
 }

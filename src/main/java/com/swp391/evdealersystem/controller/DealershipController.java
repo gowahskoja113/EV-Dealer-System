@@ -1,7 +1,9 @@
 package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.DealershipRequest;
+import com.swp391.evdealersystem.dto.request.TransferWarehouseRequest;
 import com.swp391.evdealersystem.dto.response.DealershipResponse;
+import com.swp391.evdealersystem.enums.DealershipStatus;
 import com.swp391.evdealersystem.service.DealershipService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,16 @@ public class DealershipController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // READ (Get One)
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<DealershipResponse> updateDealershipStatus(
+            @PathVariable Long id,
+            @RequestParam DealershipStatus status) {
+
+        DealershipResponse response = dealershipService.changeStatus(id, status);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DealershipResponse> getDealershipById(@PathVariable Long id) {
         DealershipResponse response = dealershipService.getDealershipById(id);
@@ -37,6 +48,16 @@ public class DealershipController {
     public ResponseEntity<List<DealershipResponse>> getAllDealerships() {
         List<DealershipResponse> responseList = dealershipService.getAllDealerships();
         return ResponseEntity.ok(responseList);
+    }
+
+    @PostMapping("/{sourceId}/transfer-warehouses")
+    public ResponseEntity<String> transferWarehouses(
+            @PathVariable Long sourceId,
+            @RequestBody TransferWarehouseRequest request) {
+
+        dealershipService.transferAllWarehouses(sourceId, request.getTargetDealershipId());
+
+        return ResponseEntity.ok("Chuyển giao kho thành công!");
     }
 
     // UPDATE
