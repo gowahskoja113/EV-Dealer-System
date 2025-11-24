@@ -7,6 +7,7 @@ import com.swp391.evdealersystem.dto.response.ServiceRecordResponse;
 import com.swp391.evdealersystem.entity.ServiceRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ServiceRecordService {
     ServiceRecordResponse create(ServiceRecordRequest req);
@@ -17,5 +18,6 @@ public interface ServiceRecordService {
     Page<ServiceRecordResponse> byUser(Long userId, Pageable p);
     ServiceRecordResponse update(Long id, ServiceRecordUpdateRequest req);
     void delete(Long id);
+
 
 }

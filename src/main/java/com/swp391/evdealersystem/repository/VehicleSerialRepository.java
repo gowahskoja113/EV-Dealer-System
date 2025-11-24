@@ -24,10 +24,11 @@ public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Lo
             Long modelId, Long warehouseId, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select v from VehicleSerial v where v.id = :id")
-    Optional<VehicleSerial> findByIdForUpdate(Long id);
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-
     @Query("SELECT vs FROM VehicleSerial vs WHERE vs.vin = :vin")
     Optional<VehicleSerial> findByVinForUpdate(@Param("vin") String vin);
+
+    boolean existsByVin(String vin);
+    Optional<VehicleSerial> findByVin(String vin);
+
+
 }
