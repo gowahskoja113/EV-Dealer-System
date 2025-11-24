@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -12,4 +13,5 @@ public interface ElectricVehicleService {
     List<ElectricVehicleResponse> getByModelCode(String modelName);
     ElectricVehicleResponse update(Long vehicleId, ElectricVehicleRequest request);
     void delete(Long id);
+    void importExcel(MultipartFile file) throws Exception;
 }

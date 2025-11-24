@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.controller;
 
 import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
+import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.List;
@@ -27,6 +29,7 @@ public class ElectricVehicleController {
     private final ModelRepository modelRepo;
     private final WarehouseRepository warehouseRepo;
     private final ElectricVehicleMapper vehicleMapper;
+
 
 
     @GetMapping("/search-by-modelCode/{modelCode}")
@@ -79,5 +82,15 @@ public class ElectricVehicleController {
     public ResponseEntity<Void> delete(@PathVariable Long vehicleId) {
         service.delete(vehicleId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import-excel")
+    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            service.importExcel(file);
+            return ResponseEntity.ok("Import thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Import lỗi: " + e.getMessage());
+        }
     }
 }

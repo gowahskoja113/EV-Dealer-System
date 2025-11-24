@@ -4,6 +4,7 @@ import com.swp391.evdealersystem.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -57,4 +58,6 @@ public class ElectricVehicle {
             return status == VehicleStatus.AVAILABLE;
         }
     }
+
+
 }

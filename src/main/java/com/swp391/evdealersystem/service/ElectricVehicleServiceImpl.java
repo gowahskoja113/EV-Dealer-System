@@ -4,15 +4,20 @@ import com.swp391.evdealersystem.dto.request.ElectricVehicleRequest;
 import com.swp391.evdealersystem.dto.response.ElectricVehicleResponse;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.Model;
+import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.ElectricVehicleMapper;
 import com.swp391.evdealersystem.repository.ElectricVehicleRepository;
 import com.swp391.evdealersystem.repository.ModelRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.OffsetDateTime;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -90,5 +95,79 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
             throw new IllegalArgumentException("Vehicle not found: " + vehicleId);
         }
         evRepo.deleteById(vehicleId);
+    }
+
+    @Override
+    public void importExcel(MultipartFile file) throws Exception {
+        Workbook workbook = WorkbookFactory.create(file.getInputStream());
+        Sheet sheet = workbook.getSheetAt(0);
+
+        List<ElectricVehicle> toSave = new ArrayList<>();
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) { // bỏ header
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+
+            String modelCode = getString(row.getCell(0));
+            if (modelCode == null || modelCode.isBlank()) continue;
+
+            // tìm model theo modelCode
+            Model model = modelRepo.findByModelCode(modelCode.trim()).orElse(null);
+            if (model == null) continue;
+
+            BigDecimal cost = getBigDecimal(row.getCell(1));
+            BigDecimal price = getBigDecimal(row.getCell(2));
+            Integer battery = getInteger(row.getCell(3));
+            String imageUrl = getString(row.getCell(4));
+            String statusStr = getString(row.getCell(5));
+
+            // unique model_id => nếu đã có EV theo modelCode thì UPDATE
+            ElectricVehicle ev = evRepo.findByModel_ModelCode(modelCode.trim())
+                    .orElse(new ElectricVehicle());
+
+            ev.setModel(model);
+            ev.setCost(cost != null ? cost : BigDecimal.ZERO);
+            ev.setPrice(price != null ? price : BigDecimal.ZERO);
+            ev.setBatteryCapacity(battery != null ? battery : 0);
+            ev.setImageUrl(imageUrl);
+
+            if (statusStr != null && !statusStr.isBlank()) {
+                ev.setStatus(VehicleStatus.valueOf(statusStr.trim().toUpperCase()));
+            } else if (ev.getStatus() == null) {
+                ev.setStatus(VehicleStatus.AVAILABLE);
+            }
+
+            toSave.add(ev);
+        }
+
+        evRepo.saveAll(toSave);
+        workbook.close();
+    }
+
+    // ========== helper ==========
+    private String getString(Cell cell) {
+        if (cell == null) return null;
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+    private Integer getInteger(Cell cell) {
+        if (cell == null) return null;
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return (int) cell.getNumericCellValue();
+        }
+        String s = getString(cell);
+        return (s == null || s.isBlank()) ? null : Integer.parseInt(s);
+    }
+
+    private BigDecimal getBigDecimal(Cell cell) {
+        if (cell == null) return null;
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return BigDecimal.valueOf(cell.getNumericCellValue());
+        }
+        String s = getString(cell);
+        return (s == null || s.isBlank())
+                ? null
+                : new BigDecimal(s.replace(",", ""));
     }
 }
