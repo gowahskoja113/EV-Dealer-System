@@ -29,7 +29,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // SQL Server
@@ -66,9 +65,14 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    // Exel
+    // Excel
     implementation 'org.apache.poi:poi:5.2.3'
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
+
+    //Email
+     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    //HTML
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 }
 
 tasks.withType(JavaCompile).configureEach {
