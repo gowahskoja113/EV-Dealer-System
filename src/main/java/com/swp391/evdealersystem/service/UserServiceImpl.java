@@ -35,63 +35,49 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Email already exists");
         }
 
-        // DTO → Entity
         User user = userMapper.toEntity(request);
-        user.setUserId(null); // ép về null để chắc chắn là insert
+        user.setUserId(null);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Gán role
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new RuntimeException("Role not found"));
             user.setRole(role);
         }
 
-        if (request.getDealershipId() != null) {
-            Dealership dealership = dealershipRepository.findById(request.getDealershipId())
-                    .orElseThrow(() -> new RuntimeException("Dealership not found"));
-            user.setDealership(dealership);
-        }
-
         User saved = userRepository.save(user);
 
-        // Lấy role từ DB, ví dụ: ROLE_ADMIN
-        String rawRoleName = saved.getRole() != null
-                ? saved.getRole().getRoleName()
-                : "ROLE_STAFF";
+        // ================= GỬI MAIL THEO ROLE =================
+        String roleName = saved.getRole() != null ? saved.getRole().getRoleName() : null;
 
-        // Chuyển ROLE_ADMIN → ADMIN
-        String roleName = rawRoleName.replace("ROLE_", "").toUpperCase();
-
-        // ========== CASE ADMIN ==========
-        if ("ADMIN".equals(roleName)) {
-
+        if ("ADMIN".equalsIgnoreCase(roleName)) {
+            // Admin: chỉ gửi mail đơn giản
             mailService.sendAdminWelcomeEmail(saved.getEmail());
-
         } else {
-            // ========== CASE MANAGER / STAFF ==========
+            // MANAGER / STAFF: lấy tên cửa hàng + nội dung theo role
 
-            // Lấy tên cửa hàng
-            String dealerShip = dealershipRepository.findDefaultDealerShip()
+            String storeName = dealershipRepository
+                    .findDefaultDealerShip()
                     .orElse("EV Dealer Store");
 
-            // ROLE MESSAGE
             String roleMessage = switch (roleName) {
-                case "MANAGER" -> "Bạn đã được cấp quyền quản lý cửa hàng/đại lý.";
-                case "STAFF" -> "Bạn đã được thêm vào đội ngũ nhân viên của cửa hàng.";
-                default -> "Tài khoản của bạn đã được tạo thành công.";
+                case "MANAGER" -> "Bạn đã được cấp quyền quản lý cửa hàng.";
+                case "STAFF"   -> "Bạn đã được thêm vào đội ngũ nhân viên của cửa hàng.";
+                default        -> "Tài khoản của bạn đã được tạo thành công.";
             };
 
             mailService.sendWelcomeEmail(
                     saved.getEmail(),
                     saved.getName(),
-                    dealerShip,
+                    storeName,
                     roleMessage
             );
         }
+        // =====================================================
 
         return userMapper.toResponse(saved);
     }
+
 
     @Override
     public List<UserResponse> getAll() {
