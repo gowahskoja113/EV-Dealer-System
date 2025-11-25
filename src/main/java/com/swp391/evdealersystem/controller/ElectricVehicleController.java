@@ -82,7 +82,7 @@ public class ElectricVehicleController {
         service.delete(vehicleId);
         return ResponseEntity.noContent().build();
     }
-
+ 
     @PostMapping("/import-vehicle-type-excel")
     public ResponseEntity<?> importVehicleTypeExcel(@RequestParam("file") MultipartFile file) {
         try {
