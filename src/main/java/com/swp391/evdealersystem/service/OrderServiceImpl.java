@@ -11,16 +11,23 @@ import com.swp391.evdealersystem.entity.*;
 import com.swp391.evdealersystem.enums.OrderPaymentStatus;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Collectors;
 
 import com.swp391.evdealersystem.enums.OrderStatus;
 import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.OrderMapper;
 import com.swp391.evdealersystem.repository.*;
+import com.swp391.evdealersystem.util.AuthenticationHelper;
+import com.swp391.evdealersystem.util.BusinessValidationUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -37,50 +44,63 @@ public class OrderServiceImpl implements OrderService {
     private final WarehouseStockRepository stockRepo;
     private final WarehouseRepository warehouseRepo;
     private final PdfGenerationService pdfGenerationService;
-
-    private void validateDeposit(ElectricVehicle v, java.math.BigDecimal deposit) {
-        if (v.getPrice() == null || v.getPrice().signum() < 0) {
-            throw new IllegalArgumentException("vehicle.price must be >= 0");
-        }
-        if (deposit == null || deposit.signum() < 0 || deposit.compareTo(v.getPrice()) > 0) {
-            throw new IllegalArgumentException("depositAmount must be between 0 and vehicle.price");
-        }
-    }
+    private final UserRepository userRepository;
+    private final AuthenticationHelper authenticationHelper;
 
     @Transactional
     @Override
     public OrderDepositResponse createDepositOrder(OrderDepositRequest req) {
+        LocalDateTime now = LocalDateTime.now();
+        User salesPerson = authenticationHelper.getCurrentUser();
+
         Customer customer = customerRepo.findById(req.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + req.getCustomerId()));
 
         VehicleSerial serial = serialRepo.findByVinForUpdate(req.getVin())
                 .orElseThrow(() -> new IllegalArgumentException("VehicleSerial not found with VIN: " + req.getVin()));
 
-        if (orderRepo.existsBySerial_VinAndStatus(serial.getVin(), com.swp391.evdealersystem.enums.OrderStatus.PROCESSING)) {
-            throw new IllegalStateException("This vehicle is already reserved by another processing order.");
+        // --- 1. BẢO MẬT: Check quyền Dealer ---
+        if (!"ROLE_ADMIN".equals(salesPerson.getRole().getRoleName())) {
+            if (salesPerson.getDealership() == null) {
+                throw new AccessDeniedException("Nhân viên chưa thuộc Đại lý nào.");
+            }
+            Long salesDealerId = salesPerson.getDealership().getDealershipId();
+            Long vehicleDealerId = serial.getWarehouse().getDealership().getDealershipId();
+
+            if (!salesDealerId.equals(vehicleDealerId)) {
+                throw new AccessDeniedException(
+                        "CHẶN ĐỨNG: Bạn thuộc Dealer " + salesDealerId +
+                                " nhưng đang cố bán xe thuộc Dealer " + vehicleDealerId
+                );
+            }
+        }
+
+        if (orderRepo.existsBySerial_VinAndStatus(serial.getVin(), OrderStatus.PROCESSING)) {
+            throw new IllegalStateException("Xe đang được xử lý ở đơn hàng khác.");
         }
         if (!serial.isSelectableNow()) {
-            throw new IllegalStateException("Vehicle " + serial.getVin() + " is not available (Status: " + serial.getStatus() + ")");
+            throw new IllegalStateException("Xe không khả dụng (Status: " + serial.getStatus() + ")");
         }
 
-        validateDeposit(serial.getVehicle(), req.getDepositAmount());
+        BusinessValidationUtils.validateDeposit(serial.getVehicle(), req.getDepositAmount());
 
+        // --- 3. GIỮ XE (HOLD) ---
         serial.setStatus(VehicleStatus.HOLD);
-        serial.setHoldUntil(OffsetDateTime.now().plusDays(30));
+        serial.setHoldUntil(now.plusDays(14).atOffset(OffsetDateTime.now().getOffset()));
 
+        // --- 4. TẠO ORDER ---
         Order order = Order.builder()
                 .customer(customer)
                 .serial(serial)
-                .orderDate(req.getOrderDate())
+                .orderDate(req.getOrderDate() != null ? req.getOrderDate() : now)
                 .currency("VND")
-                .status(com.swp391.evdealersystem.enums.OrderStatus.PROCESSING)
+                .status(OrderStatus.PROCESSING)
                 .paymentStatus(OrderPaymentStatus.UNPAID)
                 .plannedDepositAmount(req.getDepositAmount())
-                .depositAmount(java.math.BigDecimal.ZERO)
+                .depositAmount(BigDecimal.ZERO)
                 .build();
 
-        order = orderRepo.save(order);
-        return mapper.toDepositResponse(order);
+        return mapper.toDepositResponse(orderRepo.save(order));
     }
 
     @Transactional
@@ -125,7 +145,7 @@ public class OrderServiceImpl implements OrderService {
                         wh.setVehicleQuantity(total);
                         warehouseRepo.save(wh);
                     }
-                    order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.COMPLETED);
+                    order.setStatus(OrderStatus.COMPLETED);
                 }
                 case OVERDUE -> {
                     if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
@@ -196,8 +216,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
         if (order.getStatus() != OrderStatus.ORDER_PAID && order.getStatus() != OrderStatus.DELIVERING) {
-            throw new IllegalStateException("Đơn hàng phải ở trạng thái ORDER_PAID hoặc DELIVERING mới được set ngày giao. " +
-                    "Trạng thái hiện tại: " + order.getStatus());
+            throw new IllegalStateException("Đơn hàng phải ở trạng thái ORDER_PAID hoặc DELIVERING mới được set ngày giao.");
         }
 
         if (request.getDeliveryDate() == null) {
@@ -208,11 +227,22 @@ public class OrderServiceImpl implements OrderService {
         LocalDate today = LocalDate.now();
 
         if (requestedDate.isBefore(today)) {
-            throw new IllegalArgumentException("Ngày giao hàng không thể ở trong quá khứ. Ngày yêu cầu: " + requestedDate);
+            throw new IllegalArgumentException("Ngày giao hàng không thể ở trong quá khứ.");
         }
 
+        // 1. Update Order
         order.setDeliveryDate(requestedDate);
         order.setStatus(OrderStatus.DELIVERING);
+
+        // 2. Update Vehicle -> DELIVERING (Đang giao)
+        VehicleSerial serial = order.getSerial();
+        if (serial != null) {
+            // Chỉ update nếu xe chưa phải là DELIVERED
+            if (serial.getStatus() != VehicleStatus.DELIVERED) {
+                serial.setStatus(VehicleStatus.DELIVERING);
+                serialRepo.save(serial);
+            }
+        }
 
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
@@ -225,15 +255,26 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
         if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
-            throw new IllegalStateException("Order must be fully PAID before delivery.");
+            throw new IllegalStateException("Đơn hàng chưa thanh toán đủ, không thể giao xe.");
         }
 
-        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.DELIVERING) {
-            throw new IllegalStateException("Order status must be COMPLETED or DELIVERING. Status: " + order.getStatus());
+        if (order.getStatus() != OrderStatus.ORDER_PAID &&
+                order.getStatus() != OrderStatus.DELIVERING &&
+                order.getStatus() != OrderStatus.COMPLETED) {
+            throw new IllegalStateException("Trạng thái không hợp lệ. Status: " + order.getStatus());
         }
 
+        // 1. Update Order -> COMPLETED
         order.setDeliveryDate(LocalDate.now());
         order.setStatus(OrderStatus.COMPLETED);
+
+        // 2. Update Vehicle -> DELIVERED (Đã giao)
+        VehicleSerial serial = order.getSerial();
+        if (serial != null) {
+            serial.setStatus(VehicleStatus.DELIVERED);
+            serial.setHoldUntil(null); // Đảm bảo xóa hold (dù logic trước đó đã xóa rồi nhưng cứ chắc chắn)
+            serialRepo.save(serial);
+        }
 
         order = orderRepo.save(order);
         return mapper.toOrderResponse(order);
@@ -278,7 +319,7 @@ public class OrderServiceImpl implements OrderService {
         return DeliverySlipDTO.builder()
                 .orderId(order.getOrderId())
                 .deliveryDate(order.getDeliveryDate())
-                .salespersonName(sales != null ? sales.getName() : "N/A (Demo)")
+                .salespersonName(sales != null ? sales.getName() : "N/A")
                 .customerName(c.getName())
                 .customerAddress(c.getAddress())
                 .customerPhone(c.getPhoneNumber())
@@ -286,8 +327,6 @@ public class OrderServiceImpl implements OrderService {
                 .vehicleModelCode(m.getModelCode())
                 .vehicleColor(m.getColor())
                 .vehicleVin(s.getVin())
-
-                // Thêm thông tin tài chính đã thống nhất
                 .vehiclePrice(s.getVehicle().getPrice())
                 .amountPaid(order.getDepositAmount())
                 .remainingAmount(order.getRemainingAmount())

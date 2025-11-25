@@ -7,17 +7,13 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * DTO chứa dữ liệu "phẳng" để fill vào template Hợp đồng Đặt cọc.
- */
 @Getter
 @Setter
 @Builder
 public class DepositContractDTO {
 
-    // --- Thông tin Hợp đồng ---
     private String contractNumber;
-    private LocalDate contractDate;  // Sẽ dùng Order Date
+    private LocalDate contractDate;
 
     // --- Bên B (Người Bán - Hardcoded) ---
     private String companyName;
@@ -43,5 +39,6 @@ public class DepositContractDTO {
     private BigDecimal vehicleTotalPrice; // Giá niêm yết
 
     // --- Giao dịch ---
-    private BigDecimal plannedDepositAmount; // Số tiền cọc
+    private BigDecimal plannedDepositAmount;
+    private String dealerShipName;
 }

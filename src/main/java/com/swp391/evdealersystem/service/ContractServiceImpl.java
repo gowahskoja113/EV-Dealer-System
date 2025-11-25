@@ -13,11 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException; // Cần import
 
 @Service
-@RequiredArgsConstructor // Dùng cái này
+@RequiredArgsConstructor
 public class ContractServiceImpl implements ContractService {
 
     private final OrderRepository orderRepo;
-    private final PdfGenerationService pdfGenerationService; // Inject service mới
+    private final PdfGenerationService pdfGenerationService;
 
 
     @Override
@@ -31,10 +31,8 @@ public class ContractServiceImpl implements ContractService {
             throw new IllegalStateException("Order " + orderId + " has not been paid for the deposit. Cannot print contract.");
         }
 
-        // 1. Map dữ liệu
         DepositContractDTO dto = mapOrderToContractDTO(order);
 
-        // 2. Gọi service PDF
         try {
             return pdfGenerationService.generateDepositContractPdf(dto);
         } catch (IOException e) {
@@ -42,15 +40,17 @@ public class ContractServiceImpl implements ContractService {
         }
     }
 
-    /**
-     * Hàm map này vẫn giữ nguyên, nó chuẩn bị DTO
-     */
     private DepositContractDTO mapOrderToContractDTO(Order order) {
         Customer c = order.getCustomer();
         VehicleSerial s = order.getSerial();
         ElectricVehicle v = s.getVehicle();
         Model m = v.getModel();
 
+        String dealerName = "EV Dealer System (Headquarters)";
+
+        if (s.getWarehouse() != null && s.getWarehouse().getDealership() != null) {
+            dealerName = s.getWarehouse().getDealership().getName();
+        }
         return DepositContractDTO.builder()
                 // Thông tin Hợp đồng
                 .contractNumber(String.valueOf(order.getOrderId()))
@@ -62,7 +62,7 @@ public class ContractServiceImpl implements ContractService {
                 .customerPhone(c.getPhoneNumber())
                 .customerCitizenId("001099001234")
                 .customerEmail("customer.demo@example.com")
-
+                .dealerShipName(dealerName)
                 // Xe
                 .vehicleBrand(m.getBrand())
                 .vehicleModelCode(m.getModelCode())

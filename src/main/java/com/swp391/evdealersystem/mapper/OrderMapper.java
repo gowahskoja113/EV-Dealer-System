@@ -2,6 +2,7 @@ package com.swp391.evdealersystem.mapper;
 
 import com.swp391.evdealersystem.dto.response.OrderDepositResponse;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
+import com.swp391.evdealersystem.entity.Dealership;
 import com.swp391.evdealersystem.entity.ElectricVehicle;
 import com.swp391.evdealersystem.entity.Order;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,12 @@ public class OrderMapper {
 
             if (order.getSerial().getVehicle().getModel() != null) {
                 res.setVehicleModel(order.getSerial().getVehicle().getModel().getModelCode());
+            }
+            if (order.getSerial().getWarehouse() != null
+                    && order.getSerial().getWarehouse().getDealership() != null) {
+                Dealership d = order.getSerial().getWarehouse().getDealership();
+                res.setDealershipId(d.getDealershipId());
+                res.setDealershipName(d.getName());
             }
         } else {
 
@@ -61,6 +68,15 @@ public class OrderMapper {
         res.setOrderId(o.getOrderId());
         res.setCustomerId(o.getCustomer() != null ? o.getCustomer().getCustomerId() : null);
         res.setVehicleId(vehicle != null ? vehicle.getVehicleId() : null);
+
+        if (o.getSerial() != null
+                && o.getSerial().getWarehouse() != null
+                && o.getSerial().getWarehouse().getDealership() != null) {
+            Dealership d = o.getSerial().getWarehouse().getDealership();
+            res.setDealershipId(d.getDealershipId());
+            res.setDealershipName(d.getName());
+        }
+
         res.setDepositAmount(o.getPlannedDepositAmount());
         res.setRemainingAmount(o.getRemainingAmount());
         res.setPaymentStatus(o.getPaymentStatus());

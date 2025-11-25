@@ -39,10 +39,17 @@ public class UserServiceImpl implements UserService {
         user.setUserId(null);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
+        // 1. Gán Role (Code cũ của bạn)
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new RuntimeException("Role not found"));
             user.setRole(role);
+        }
+
+        if (request.getDealershipId() != null) {
+            Dealership dealership = dealershipRepository.findById(request.getDealershipId())
+                    .orElseThrow(() -> new RuntimeException("Dealership not found with ID: " + request.getDealershipId()));
+            user.setDealership(dealership);
         }
 
         User saved = userRepository.save(user);
@@ -51,16 +58,17 @@ public class UserServiceImpl implements UserService {
         String roleName = saved.getRole() != null ? saved.getRole().getRoleName() : null;
 
         if ("ADMIN".equalsIgnoreCase(roleName)) {
-            // Admin: chỉ gửi mail đơn giản
             mailService.sendAdminWelcomeEmail(saved.getEmail());
         } else {
-            // MANAGER / STAFF: lấy tên cửa hàng + nội dung theo role
 
-            String storeName = dealershipRepository
-                    .findDefaultDealerShip()
-                    .orElse("EV Dealer Store");
+            String dealerShipName;
+            if (saved.getDealership() != null) {
+                dealerShipName = saved.getDealership().getName();
+            } else {
+                dealerShipName = dealershipRepository.findDefaultDealerShip().orElse("EV Dealer Store");
+            }
 
-            String roleMessage = switch (roleName) {
+            String roleMessage = switch (roleName != null ? roleName : "") {
                 case "MANAGER" -> "Bạn đã được cấp quyền quản lý cửa hàng.";
                 case "STAFF"   -> "Bạn đã được thêm vào đội ngũ nhân viên của cửa hàng.";
                 default        -> "Tài khoản của bạn đã được tạo thành công.";
@@ -69,15 +77,13 @@ public class UserServiceImpl implements UserService {
             mailService.sendWelcomeEmail(
                     saved.getEmail(),
                     saved.getName(),
-                    storeName,
+                    dealerShipName,
                     roleMessage
             );
         }
-        // =====================================================
 
         return userMapper.toResponse(saved);
     }
-
 
     @Override
     public List<UserResponse> getAll() {

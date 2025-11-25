@@ -26,4 +26,6 @@ public class OrderDepositResponse {
 
     private LocalDateTime depositPaidAt;
     private LocalDateTime fullyPaidAt;
+    private Long dealershipId;
+    private String dealershipName;
 }

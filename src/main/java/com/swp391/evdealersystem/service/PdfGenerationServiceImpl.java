@@ -74,6 +74,7 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         cellSeller.add(new Paragraph("Address: " + this.companyAddress).setFont(font));
         cellSeller.add(new Paragraph("Phone: " + this.companyPhone).setFont(font));
         cellSeller.add(new Paragraph("Represented by: " + this.legalRepName + " (" + this.legalRepTitle + ")").setFont(font));
+        cellSeller.add(new Paragraph("Dealership: " + dto.getDealerShipName()).setFont(font));
         table.addCell(cellSeller);
 
         Cell cellBuyer = new Cell().setBorder(null).setPaddingLeft(10);
@@ -94,7 +95,8 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         document.add(new Paragraph("Color: " + dto.getVehicleColor()).setFont(font));
         document.add(new Paragraph("VIN (Vehicle Identification Number): " + dto.getVehicleVin()).setFont(fontBold));
         document.add(new Paragraph("Deposited Amount: " + dto.getPlannedDepositAmount()).setFont(fontBold));
-        document.add(new Paragraph("Remaining Amount: " + remainingBalance).setFont(fontBold));
+        document.add(new Paragraph("Deposited Amount: " + CURRENCY_FORMAT.format(dto.getPlannedDepositAmount())).setFont(fontBold));
+        document.add(new Paragraph("Remaining Amount: " + CURRENCY_FORMAT.format(remainingBalance)).setFont(fontBold));
         document.add(new Paragraph("Total Price: " + CURRENCY_FORMAT.format(totalPrice)).setFont(fontBold));
         document.add(new Paragraph().setMarginBottom(15));
 
@@ -213,7 +215,7 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
                 .setFont(font)
                 .add(new Text(CURRENCY_FORMAT.format(remainingAmount))
                         .setFont(fontBold));
-        document.add(pRemaining.setMarginBottom(30)); // Thêm margin sau khối này
+        document.add(pRemaining.setMarginBottom(30));
 
         document.add(new Paragraph("I, " + customerName + ", hereby confirm that I have received the vehicle "
                 + "listed above in good condition and with all required documentation.")
@@ -226,8 +228,8 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         signatureTable.addCell(new Cell().setBorder(null).add(new Paragraph("Customer Signature").setFont(fontBold).setTextAlignment(TextAlignment.CENTER)));
         signatureTable.addCell(new Cell().setBorder(null).add(new Paragraph("Seller Signature").setFont(fontBold).setTextAlignment(TextAlignment.CENTER)));
 
-        signatureTable.addCell(new Cell().setBorder(null).setHeight(80)); // Khoảng trống ký
-        signatureTable.addCell(new Cell().setBorder(null).setHeight(80)); // Khoảng trống ký
+        signatureTable.addCell(new Cell().setBorder(null).setHeight(80));
+        signatureTable.addCell(new Cell().setBorder(null).setHeight(80));
 
         document.add(signatureTable);
 

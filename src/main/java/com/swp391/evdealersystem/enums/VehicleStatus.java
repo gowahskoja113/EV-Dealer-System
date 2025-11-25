@@ -1,8 +1,10 @@
-    package com.swp391.evdealersystem.enums;
+package com.swp391.evdealersystem.enums;
 
-    public enum VehicleStatus {
-        AVAILABLE,
-        HOLD,
-        DELIVERED,
-        SOLD_OUT
-    }
+public enum VehicleStatus {
+    AVAILABLE,
+    HOLD,
+    UNDELIVERED,
+    DELIVERED,
+    DELIVERING,
+    SOLD_OUT
+}

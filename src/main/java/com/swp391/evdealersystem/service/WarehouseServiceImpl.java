@@ -13,6 +13,8 @@ import com.swp391.evdealersystem.enums.QtyMode;
 import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.mapper.WarehouseMapper;
 import com.swp391.evdealersystem.repository.*;
+import com.swp391.evdealersystem.util.AuthenticationHelper;
+import com.swp391.evdealersystem.util.BusinessValidationUtils;
 import com.swp391.evdealersystem.util.VinGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -39,33 +41,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final VinGenerator vinGenerator;
     private final DealershipRepository dealershipRepository;
     private final UserRepository userRepository;
-
-    public User getCurrentUser() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-    }
-
-    private void validateWarehouseAccess(Warehouse w, User user) {
-        // 1. Admin quyền lực tối cao -> Cho qua
-        if (user.getRole().getRoleName().equalsIgnoreCase("ROLE_ADMIN")) {
-            return;
-        }
-
-        // 2. Nếu User không thuộc Dealership nào (Khách hàng/User tự do) -> CHẶN
-        if (user.getDealership() == null) {
-            throw new AccessDeniedException("Bạn không có quyền truy cập hoặc chỉnh sửa kho hàng.");
-        }
-
-        // 3. Nếu User có Dealership -> So sánh ID Dealer của User và của Kho
-        Long userDealerId = user.getDealership().getDealershipId();
-        Long warehouseDealerId = w.getDealership().getDealershipId();
-
-        if (!userDealerId.equals(warehouseDealerId)) {
-            throw new AccessDeniedException("Bạn không có quyền thao tác trên kho của Đại lý khác!");
-        }
-    }
+    private final AuthenticationHelper authenticationHelper;
 
     @Override
     @Transactional
@@ -82,7 +58,7 @@ public class WarehouseServiceImpl implements WarehouseService {
             throw new IllegalStateException("Không thể tạo kho mới cho Đại lý đang ngừng hoạt động (INACTIVE).");
         }
 
-        User currentUser = getCurrentUser();
+        User currentUser = authenticationHelper.getCurrentUser();
         if (!currentUser.getRole().getRoleName().equalsIgnoreCase("ROLE_ADMIN")) {
             if (currentUser.getDealership() == null ||
                     !currentUser.getDealership().getDealershipId().equals(dealership.getDealershipId())) {
@@ -103,7 +79,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
-        validateWarehouseAccess(w, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(w, authenticationHelper.getCurrentUser());
 
         var flats = stockRepo.findFlatByWarehouseId(id);
 
@@ -143,7 +119,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public List<WarehouseResponse> getAll() {
-        User user = getCurrentUser();
+        User user = authenticationHelper.getCurrentUser();
         List<Warehouse> headers;
 
         // [TỐI ƯU] Check user trước, sau đó mới gọi DB
@@ -186,7 +162,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
-        validateWarehouseAccess(w, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(w, authenticationHelper.getCurrentUser());
 
         mapper.updateEntity(w, request);
         warehouseRepo.save(w);
@@ -200,7 +176,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse w = warehouseRepo.findHeaderById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
-        validateWarehouseAccess(w, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(w, authenticationHelper.getCurrentUser());
 
         warehouseRepo.delete(w);
     }
@@ -220,8 +196,8 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .orElseThrow(() -> new EntityNotFoundException("Model không tìm thấy: " + request.getModelCode()));
 
         // 2. Xác thực quyền truy cập
-        validateWarehouseAccess(sourceWh, getCurrentUser());
-        validateWarehouseAccess(targetWh, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(sourceWh, authenticationHelper.getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(targetWh, authenticationHelper.getCurrentUser());
 
         if (sourceWarehouseId.equals(targetWarehouseId)) {
             throw new IllegalArgumentException("Không thể chuyển hàng giữa cùng một kho.");
@@ -307,7 +283,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse wh = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
-        validateWarehouseAccess(wh, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(wh, authenticationHelper.getCurrentUser());
 
         Model model = modelRepository.findByModelCode(request.getModelCode())
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + request.getModelCode()));
@@ -408,7 +384,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         Warehouse w = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
 
-        validateWarehouseAccess(w, getCurrentUser());
+        BusinessValidationUtils.validateWarehouseAccess(w, authenticationHelper.getCurrentUser());
 
         Model m = modelRepository.findByModelCode(modelCode)
                 .orElseThrow(() -> new EntityNotFoundException("Model not found: " + modelCode));

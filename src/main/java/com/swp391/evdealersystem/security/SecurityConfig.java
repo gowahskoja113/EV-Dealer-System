@@ -43,19 +43,19 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                // ✅ MỞ quyền cho VNPay callback & start
-                                "/api/payments/vnpay/**"
+                                "/api/payments/vnpay/**",
+                                "/api/password/forgot",
+                                "/api/password/reset"
                         ).permitAll()
-                        // (Optional) cho preflight CORS nếu có FE gọi
+
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        // Các endpoint còn lại yêu cầu xác thực
+
                         .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

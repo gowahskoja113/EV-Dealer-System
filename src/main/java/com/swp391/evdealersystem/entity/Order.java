@@ -21,7 +21,8 @@ import java.time.LocalDateTime;
         })
 public class Order {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long orderId;
 
@@ -78,29 +79,33 @@ public class Order {
 
     @PrePersist
     void prePersist() {
+        // Chỉ set nếu chưa có (Service chưa set)
         if (orderDate == null) orderDate = LocalDateTime.now();
+        if (updatedAt == null) updatedAt = LocalDateTime.now();
+
+        // Default values
         if (currency == null)  currency = "VND";
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
         if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
         if (status == null) status = OrderStatus.PROCESSING;
 
-        updatedAt = LocalDateTime.now();
-
-        BigDecimal price = (serial != null && serial.getVehicle() != null && serial.getVehicle().getPrice() != null)
-                ? serial.getVehicle().getPrice()
-                : BigDecimal.ZERO;
-        remainingAmount = maxZero(price.subtract(depositAmount));
+        // Tính toán tiền
+        calculateRemaining();
     }
 
     @PreUpdate
     void preUpdate() {
+        updatedAt = LocalDateTime.now();
+        calculateRemaining();
+    }
+
+    private void calculateRemaining() {
         BigDecimal price = (serial != null && serial.getVehicle() != null && serial.getVehicle().getPrice() != null)
                 ? serial.getVehicle().getPrice()
                 : BigDecimal.ZERO;
 
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
         remainingAmount = maxZero(price.subtract(depositAmount));
-        updatedAt = LocalDateTime.now();
     }
 
     private static BigDecimal maxZero(BigDecimal v) {

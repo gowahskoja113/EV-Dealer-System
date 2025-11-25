@@ -5,15 +5,14 @@ import com.swp391.evdealersystem.dto.request.StartVnpayRequest;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
 import com.swp391.evdealersystem.dto.response.StartVnpayResponse;
 import com.swp391.evdealersystem.dto.response.VnpIpnResponse;
-import com.swp391.evdealersystem.entity.Customer;
-import com.swp391.evdealersystem.entity.Order;
-import com.swp391.evdealersystem.entity.Payment;
-import com.swp391.evdealersystem.entity.VehicleSerial;
+import com.swp391.evdealersystem.entity.*;
 import com.swp391.evdealersystem.enums.*;
 import com.swp391.evdealersystem.mapper.OrderMapper;
 import com.swp391.evdealersystem.repository.*;
+import com.swp391.evdealersystem.util.AuthenticationHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,38 +32,92 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderMapper mapper;
     private final VNPAYService vnpayService;
     private final CustomerRepository customerRepo;
+    private final AuthenticationHelper authenticationHelper;
+
+    private void validatePaymentAccess(Order order) {
+        User currentUser = authenticationHelper.getCurrentUser();
+        if ("ROLE_ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName())) return;
+
+        if (currentUser.getDealership() == null) {
+            throw new AccessDeniedException("Nhân viên chưa được gán vào Đại lý.");
+        }
+
+        VehicleSerial serial = order.getSerial();
+        if (serial == null || serial.getWarehouse() == null || serial.getWarehouse().getDealership() == null) {
+            return;
+        }
+
+        Long userDealerId = currentUser.getDealership().getDealershipId();
+        Long orderDealerId = serial.getWarehouse().getDealership().getDealershipId();
+
+        if (!userDealerId.equals(orderDealerId)) {
+            throw new AccessDeniedException("CHẶN: Bạn không có quyền thu tiền cho đơn hàng của Đại lý khác.");
+        }
+    }
+
+    private void handleFullyPaid(Order order, VehicleSerial serial) {
+        order.setPaymentStatus(OrderPaymentStatus.PAID);
+        order.setStatus(OrderStatus.ORDER_PAID);
+
+        if (order.getFullyPaidAt() == null) order.setFullyPaidAt(LocalDateTime.now());
+        if (order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
+
+        Customer customer = order.getCustomer();
+        if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
+            customer.setStatus(CustomerStatus.CUSTOMER);
+            customerRepo.save(customer);
+        }
+
+        if (serial.getStatus() != VehicleStatus.UNDELIVERED && serial.getStatus() != VehicleStatus.SOLD_OUT) {
+
+            serial.setStatus(VehicleStatus.UNDELIVERED);
+            serial.setHoldUntil(null);
+            serialRepo.save(serial);
+
+            Long warehouseId = serial.getWarehouse().getWarehouseId();
+            Long modelId = serial.getModel().getModelId();
+
+            var stock = stockRepo.findForUpdate(warehouseId, modelId)
+                    .orElseThrow(() -> new IllegalStateException("Stock not found"));
+
+            if (stock.getQuantity() <= 0) {
+                throw new IllegalStateException("Kho bị âm, không thể trừ xe.");
+            }
+
+            stock.setQuantity(stock.getQuantity() - 1);
+            stockRepo.save(stock);
+
+            int total = stockRepo.sumQuantityByWarehouseId(warehouseId);
+            var wh = serial.getWarehouse();
+            wh.setVehicleQuantity(total);
+            warehouseRepo.save(wh);
+        }
+    }
 
     @Transactional
+    @Override
     public OrderResponse processCash(Long orderId, CashPaymentRequest req) {
         Order order = orderRepo.findGraphByOrderId(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
+
+        validatePaymentAccess(order);
 
         if (order.getPaymentStatus() == OrderPaymentStatus.PAID) {
             return mapper.toOrderResponse(order);
         }
 
         VehicleSerial serial = order.getSerial();
-        if (serial == null || serial.getVehicle() == null) {
-            throw new IllegalStateException("Order missing vehicle/serial.");
-        }
+        if (serial == null || serial.getVehicle() == null) throw new IllegalStateException("Order missing vehicle.");
 
         BigDecimal price = serial.getVehicle().getPrice() != null ? serial.getVehicle().getPrice() : BigDecimal.ZERO;
         BigDecimal deposit = order.getDepositAmount() != null ? order.getDepositAmount() : BigDecimal.ZERO;
         BigDecimal paid = req.getAmount();
-        if (paid == null || paid.signum() <= 0) {
-            throw new IllegalArgumentException("amount must be > 0");
-        }
 
-        PaymentPurpose applyTo = (req.getApplyTo() != null) ? req.getApplyTo() : PaymentPurpose.DEPOSIT;
-
+        // Save Payment
         Payment pay = Payment.builder()
-                .order(order)
-                .amount(paid)
-                .status(PaymentStatus.PAID)
-                .type(applyTo)
-                .method(PaymentMethod.CASH)
-                .paymentDate(LocalDateTime.now())
-                .message(req.getNote())
+                .order(order).amount(paid).status(PaymentStatus.PAID)
+                .type((req.getApplyTo() != null) ? req.getApplyTo() : PaymentPurpose.DEPOSIT)
+                .method(PaymentMethod.CASH).paymentDate(LocalDateTime.now()).message(req.getNote())
                 .build();
         paymentRepo.save(pay);
 
@@ -76,52 +129,11 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal planned = order.getPlannedDepositAmount() == null ? BigDecimal.ZERO : order.getPlannedDepositAmount();
 
         if (fullyPaid) {
-            order.setPaymentStatus(OrderPaymentStatus.PAID);
-
-            order.setStatus(OrderStatus.ORDER_PAID);
-            if (order.getFullyPaidAt() == null) {
-                order.setFullyPaidAt(LocalDateTime.now());
-            }
-
-            if (order.getDepositPaidAt() == null) {
-                order.setDepositPaidAt(LocalDateTime.now());
-            }
-
-            Customer customer = order.getCustomer();
-            if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
-                customer.setStatus(CustomerStatus.CUSTOMER);
-                customerRepo.save(customer);
-            }
-            if (serial.getStatus() != VehicleStatus.SOLD_OUT) {
-                serial.setStatus(VehicleStatus.SOLD_OUT);
-                serial.setHoldUntil(null);
-                serialRepo.save(serial);
-
-                Long whId = serial.getWarehouse().getWarehouseId();
-                Long modelId = serial.getModel().getModelId();
-
-                var stock = stockRepo.findForUpdate(whId, modelId)
-                        .orElseThrow(() -> new IllegalStateException("Stock not found for warehouse/model"));
-                if (stock.getQuantity() <= 0) {
-                    throw new IllegalStateException("Stock would go negative for model " + serial.getModel().getModelCode());
-                }
-                stock.setQuantity(stock.getQuantity() - 1);
-                stockRepo.save(stock);
-
-                int total = stockRepo.sumQuantityByWarehouseId(whId);
-                var wh = serial.getWarehouse();
-                wh.setVehicleQuantity(total);
-                warehouseRepo.save(wh);
-            }
+            handleFullyPaid(order, serial);
         } else {
-
             if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                 order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
-
-                if (order.getDepositPaidAt() == null) {
-                    order.setDepositPaidAt(LocalDateTime.now());
-                }
-
+                if (order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
             } else {
                 order.setPaymentStatus(OrderPaymentStatus.UNPAID);
             }
@@ -137,84 +149,55 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepo.findGraphByOrderId(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found: " + orderId));
 
-        if (order.getSerial() == null || order.getSerial().getVehicle() == null
-                || order.getSerial().getVehicle().getPrice() == null) {
-            throw new IllegalStateException("Order missing vehicle/price.");
-        }
+        validatePaymentAccess(order);
 
         var price = order.getSerial().getVehicle().getPrice();
-        var deposit = order.getDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getDepositAmount();
+        var deposit = order.getDepositAmount() == null ? BigDecimal.ZERO : order.getDepositAmount();
+        BigDecimal toPay;
 
-        java.math.BigDecimal toPay;
         if (req.purpose() == PaymentPurpose.DEPOSIT) {
             var planned = order.getPlannedDepositAmount();
-            if (planned == null || planned.signum() <= 0) {
-                throw new IllegalStateException("No planned deposit on order.");
-            }
+            if (planned == null) throw new IllegalStateException("No planned deposit");
             toPay = planned.subtract(deposit);
-            if (toPay.signum() <= 0) {
-                throw new IllegalStateException("Planned deposit already satisfied.");
-            }
         } else {
             toPay = price.subtract(deposit);
-            if (toPay.signum() <= 0) {
-                throw new IllegalStateException("Order is already fully paid.");
-            }
         }
 
-        Payment p = Payment.builder()
-                .order(order)
-                .amount(toPay)
-                .status(PaymentStatus.PENDING)
-                .type(req.purpose())
-                .method(PaymentMethod.VNPAY)
-                .build();
+        if (toPay.signum() <= 0) throw new IllegalStateException("Already paid enough");
+
+        Payment p = Payment.builder().order(order).amount(toPay).status(PaymentStatus.PENDING)
+                .type(req.purpose()).method(PaymentMethod.VNPAY).build();
         p = paymentRepo.save(p);
         p.setTransactionRef(String.valueOf(p.getId()));
         paymentRepo.save(p);
 
-        String url = vnpayService.createPaymentUrl(
-                toPay.longValueExact(),
-                req.bankCode(),
-                order.getOrderId(),
-                p.getId(),
-                req.purpose().name()
-        );
-
+        String url = vnpayService.createPaymentUrl(toPay.longValueExact(), req.bankCode(), order.getOrderId(), p.getId(), req.purpose().name());
         return new StartVnpayResponse(p.getId(), url);
     }
 
     @Override
     @Transactional
     public VnpIpnResponse processVnpayCallback(Map<String, String> params) {
-        if (!vnpayService.verifySignature(params)) {
-            return VnpIpnResponse.fail("97", "Invalid signature");
-        }
+        if (!vnpayService.verifySignature(params)) return VnpIpnResponse.fail("97", "Invalid signature");
 
         String rsp = params.get("vnp_ResponseCode");
         String txnRef = params.get("vnp_TxnRef");
-        String transNo = params.get("vnp_TransactionNo");
-        String payDate = params.get("vnp_PayDate");
         long amount = Long.parseLong(params.get("vnp_Amount"));
 
         var payment = paymentRepo.findByTransactionRef(txnRef)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found for vnp_TxnRef=" + txnRef));
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found"));
 
-        if (payment.getStatus() == PaymentStatus.PAID) {
-            return VnpIpnResponse.ok("00", "Already processed");
-        }
+        if (payment.getStatus() == PaymentStatus.PAID) return VnpIpnResponse.ok("00", "Already processed");
 
         long expected = payment.getAmount().longValueExact() * 100L;
         if (expected != amount) {
             payment.setStatus(PaymentStatus.FAILED);
-            payment.setMessage("Amount mismatch: expected=" + expected + ", actual=" + amount);
             paymentRepo.save(payment);
-            return VnpIpnResponse.fail("04", "Invalid amount");
+            return VnpIpnResponse.fail("04", "Amount mismatch");
         }
 
         if ("00".equals(rsp)) {
             payment.setStatus(PaymentStatus.PAID);
-            payment.setMessage("VNPay transNo=" + transNo + " payDate=" + payDate);
             payment.setPaymentDate(LocalDateTime.now());
             paymentRepo.save(payment);
 
@@ -222,78 +205,28 @@ public class PaymentServiceImpl implements PaymentService {
             var serial = order.getSerial();
 
             if (payment.getType() == PaymentPurpose.DEPOSIT) {
-                var newDeposit = (order.getDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getDepositAmount())
-                        .add(payment.getAmount());
+                var newDeposit = (order.getDepositAmount() == null ? BigDecimal.ZERO : order.getDepositAmount()).add(payment.getAmount());
                 order.setDepositAmount(newDeposit);
 
-                var planned = order.getPlannedDepositAmount() == null ? java.math.BigDecimal.ZERO : order.getPlannedDepositAmount();
-                if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
+                var planned = order.getPlannedDepositAmount();
+                if (planned != null && newDeposit.compareTo(planned) >= 0) {
                     order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
-
-                    if (order.getDepositPaidAt() == null) {
-                        order.setDepositPaidAt(LocalDateTime.now());
-                    }
-
-                } else {
-                    order.setPaymentStatus(OrderPaymentStatus.UNPAID);
+                    if (order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
                 }
-                order.setStatus(com.swp391.evdealersystem.enums.OrderStatus.PROCESSING);
                 orderRepo.save(order);
 
             } else if (payment.getType() == PaymentPurpose.REMAINING) {
-
-                order.setPaymentStatus(OrderPaymentStatus.PAID);
-
-                order.setStatus(OrderStatus.ORDER_PAID);
-
-                if (order.getFullyPaidAt() == null) {
-                    order.setFullyPaidAt(LocalDateTime.now());
-                }
-
-                if (order.getDepositPaidAt() == null) {
-                    order.setDepositPaidAt(LocalDateTime.now());
-                }
-
-                Customer customer = order.getCustomer();
-                if (customer != null && customer.getStatus() == CustomerStatus.LEAD) {
-                    customer.setStatus(CustomerStatus.CUSTOMER);
-                    customerRepo.save(customer);
-                }
-
-                if (serial != null && serial.getStatus() != VehicleStatus.SOLD_OUT) {
-                    serial.setStatus(VehicleStatus.SOLD_OUT);
-                    serial.setHoldUntil(null);
-                    serialRepo.save(serial);
-
-                    Long whId = serial.getWarehouse().getWarehouseId();
-                    Long modelId = serial.getModel().getModelId();
-
-                    var stock = stockRepo.findForUpdate(whId, modelId)
-                            .orElseThrow(() -> new IllegalStateException("Stock not found for warehouse/model"));
-                    if (stock.getQuantity() <= 0) {
-                        throw new IllegalStateException("Stock would go negative for model " + serial.getModel().getModelCode());
-                    }
-                    stock.setQuantity(stock.getQuantity() - 1);
-                    stockRepo.save(stock);
-
-                    int total = stockRepo.sumQuantityByWarehouseId(whId);
-                    var wh = serial.getWarehouse();
-                    wh.setVehicleQuantity(total);
-                    warehouseRepo.save(wh);
-                }
-
-                if (serial != null && serial.getVehicle() != null && serial.getVehicle().getPrice() != null) {
+                if (serial != null && serial.getVehicle() != null) {
                     order.setDepositAmount(serial.getVehicle().getPrice());
                 }
+                handleFullyPaid(order, serial);
                 orderRepo.save(order);
             }
-
             return VnpIpnResponse.ok("00", "Success");
         } else {
             payment.setStatus(PaymentStatus.FAILED);
-            payment.setMessage("VNPay failed code=" + rsp);
             paymentRepo.save(payment);
-            return VnpIpnResponse.fail("24", "Payment failed: " + rsp);
+            return VnpIpnResponse.fail("24", "Failed");
         }
     }
 }
