@@ -25,7 +25,6 @@ public class PasswordServiceImpl implements PasswordService {
 
     // link FE reset password
     private final String FE_RESET_URL = "http://localhost:3000/reset-password?token=";
-    // đổi thành domain FE của bạn khi deploy
 
     @Override
     @Transactional
