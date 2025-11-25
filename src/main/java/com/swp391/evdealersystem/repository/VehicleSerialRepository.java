@@ -12,13 +12,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Long> {
+
+    // Phương thức cũ dùng khi lấy chi tiết Serial theo kho và model
     List<VehicleSerial> findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoAsc(Long modelId, Long warehouseId);
 
     @Query("""
       select coalesce(max(vs.seqNo), 0) from VehicleSerial vs
-      where vs.model.modelId = :modelId and vs.warehouse.warehouseId = :warehouseId
+      where vs.model.modelId = :modelId
     """)
-    int findMaxSeqNoByModelAndWarehouse(Long modelId, Long warehouseId);
+    int findMaxSeqNoByModel(Long modelId);
 
     List<VehicleSerial> findByModel_ModelIdAndWarehouse_WarehouseIdOrderBySeqNoDesc(
             Long modelId, Long warehouseId, Pageable pageable);
@@ -31,4 +33,16 @@ public interface VehicleSerialRepository extends JpaRepository<VehicleSerial, Lo
     Optional<VehicleSerial> findByVin(String vin);
 
     List<VehicleSerial> findByWarehouse_Dealership_DealershipId(Long dealershipId);
+
+    // Phương thức đã sửa lỗi LIMIT/FETCH, dùng để chuyển kho
+    @Query("""
+      select vs from VehicleSerial vs
+      where vs.warehouse.warehouseId = :warehouseId and vs.model.modelId = :modelId
+      and vs.status = 'AVAILABLE'
+      order by vs.seqNo desc
+    """)
+    List<VehicleSerial> findTopNSerialsForTransfer(
+            @Param("warehouseId") Long warehouseId,
+            @Param("modelId") Long modelId,
+            Pageable pageable);
 }

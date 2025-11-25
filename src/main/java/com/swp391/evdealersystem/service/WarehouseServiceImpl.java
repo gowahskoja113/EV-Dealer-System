@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.service;
 
+import com.swp391.evdealersystem.dto.request.TransferStockRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseStockRequest;
 import com.swp391.evdealersystem.dto.response.VehicleSerialResponse;
@@ -17,6 +18,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -205,6 +207,102 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     @Transactional
+    public WarehouseResponse transferStock(Long sourceWarehouseId, Long targetWarehouseId,
+                                           TransferStockRequest request) {
+        // 1. Load Kho Nguồn, Kho Đích và Model
+        Warehouse sourceWh = warehouseRepo.findHeaderById(sourceWarehouseId)
+                .orElseThrow(() -> new EntityNotFoundException("Kho nguồn (Source Warehouse) không tìm thấy"));
+
+        Warehouse targetWh = warehouseRepo.findHeaderById(targetWarehouseId)
+                .orElseThrow(() -> new EntityNotFoundException("Kho đích (Target Warehouse) không tìm thấy"));
+
+        Model model = modelRepository.findByModelCode(request.getModelCode())
+                .orElseThrow(() -> new EntityNotFoundException("Model không tìm thấy: " + request.getModelCode()));
+
+        // 2. Xác thực quyền truy cập
+        validateWarehouseAccess(sourceWh, getCurrentUser());
+        validateWarehouseAccess(targetWh, getCurrentUser());
+
+        if (sourceWarehouseId.equals(targetWarehouseId)) {
+            throw new IllegalArgumentException("Không thể chuyển hàng giữa cùng một kho.");
+        }
+
+        if (targetWh.getDealership().getStatus() == DealershipStatus.INACTIVE) {
+            throw new IllegalStateException("Kho đích thuộc Đại lý đang ngừng hoạt động (INACTIVE), không thể nhận xe.");
+        }
+
+        // 3. Lấy Stock của Kho Nguồn và Kiểm tra số lượng
+        WarehouseStock sourceStock = stockRepo.findByWarehouseAndModel(sourceWh, model)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Không tìm thấy stock của Model " + request.getModelCode() + " trong kho nguồn."
+                ));
+
+        int transferQty = request.getQuantity();
+        int currentSourceQty = sourceStock.getQuantity();
+
+        if (currentSourceQty < transferQty) {
+            throw new IllegalArgumentException(
+                    "Số lượng cần chuyển (" + transferQty + ") vượt quá số lượng hiện có (" + currentSourceQty + ") trong kho nguồn."
+            );
+        }
+
+        // 4. Kiểm tra Capacity của Kho Đích
+        final int WAREHOUSE_CAPACITY_LIMIT = targetWh.getMaxCapacity();
+        int currentTargetTotal = stockRepo.sumQuantityByWarehouseId(targetWh.getWarehouseId());
+        int projectedTargetTotal = currentTargetTotal + transferQty;
+
+        if (projectedTargetTotal > WAREHOUSE_CAPACITY_LIMIT) {
+            throw new IllegalArgumentException(
+                    "Vượt quá sức chứa của kho đích. Giới hạn: " + WAREHOUSE_CAPACITY_LIMIT +
+                            ". Dự kiến: " + projectedTargetTotal
+            );
+        }
+
+        // 5. Cập nhật Stock Kho Nguồn (GIẢM)
+        sourceStock.setQuantity(currentSourceQty - transferQty);
+        stockRepo.save(sourceStock);
+
+        // 6. Cập nhật Stock Kho Đích (TĂNG)
+        WarehouseStock targetStock = stockRepo.findByWarehouseAndModel(targetWh, model)
+                .orElseGet(() -> {
+                    WarehouseStock s = new WarehouseStock();
+                    s.setWarehouse(targetWh);
+                    s.setModel(model);
+                    s.setQuantity(0);
+                    return s;
+                });
+
+        targetStock.setQuantity(targetStock.getQuantity() + transferQty);
+        stockRepo.save(targetStock);
+
+        Pageable pageable = PageRequest.of(0, transferQty); // Lấy N bản ghi đầu tiên (offset 0)
+        List<VehicleSerial> serialsToTransfer = vehicleSerialRepository
+                .findTopNSerialsForTransfer(sourceWh.getWarehouseId(), model.getModelId(), pageable);
+
+        if (serialsToTransfer.size() < transferQty) {
+            throw new IllegalStateException("Lỗi dữ liệu: Số lượng serial thực tế không đủ để chuyển.");
+        }
+
+        for (VehicleSerial vs : serialsToTransfer) {
+            vs.setWarehouse(targetWh); // CHUYỂN KHO HÀNG
+            // Không cần đổi status nếu vẫn AVAILABLE
+        }
+        vehicleSerialRepository.saveAll(serialsToTransfer);
+
+        // 8. Cập nhật tổng số lượng xe của hai kho (VehicleQuantity)
+        int newSourceTotal = stockRepo.sumQuantityByWarehouseId(sourceWh.getWarehouseId());
+        sourceWh.setVehicleQuantity(newSourceTotal);
+        warehouseRepo.save(sourceWh);
+
+        targetWh.setVehicleQuantity(projectedTargetTotal);
+        warehouseRepo.save(targetWh);
+
+        // Trả về thông tin kho đích sau khi cập nhật
+        return getById(targetWarehouseId);
+    }
+
+    @Override
+    @Transactional
     public WarehouseResponse upsertStock(Long warehouseId, WarehouseStockRequest request) {
         Warehouse wh = warehouseRepo.findHeaderById(warehouseId)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found"));
@@ -270,8 +368,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         stockRepo.save(stock);
 
         if (delta > 0) {
-            int startSeq = vehicleSerialRepository.findMaxSeqNoByModelAndWarehouse(
-                    model.getModelId(), wh.getWarehouseId());
+            int startSeq = vehicleSerialRepository.findMaxSeqNoByModel(model.getModelId());
             String colorLetter = vinGenerator.colorToLetter(model.getColor());
             int year = model.getProductionYear();
             Long vehicleId = ev.getVehicleId();
@@ -280,7 +377,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
             for (int i = 1; i <= delta; i++) {
                 int seq = startSeq + i;
-                String vin = vinGenerator.buildVin(year, dealerShipId, whId, vehicleId, colorLetter, seq);
+                String vin = vinGenerator.buildVin(year, dealerShipId, vehicleId, colorLetter, seq);
                 VehicleSerial vs = new VehicleSerial();
                 vs.setVehicle(ev);
                 vs.setModel(model);

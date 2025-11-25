@@ -12,7 +12,7 @@ public interface DealershipService {
     List<DealershipResponse> getAllDealerships();
     DealershipResponse updateDealership(Long id, DealershipRequest dealershipRequest);
     void deleteDealership(Long id);
-    public DealershipResponse changeStatus(Long id, DealershipStatus newStatus);
-    public void transferAllWarehouses(Long sourceDealershipId, Long targetDealershipId);
+    DealershipResponse changeStatus(Long id, DealershipStatus newStatus);
+    void transferSelectedWarehouses(Long sourceDealershipId, Long targetDealershipId, List<Long> warehouseIds);
     void deleteWarehouseFromDealership(Long dealershipId, Long warehouseId);
 }

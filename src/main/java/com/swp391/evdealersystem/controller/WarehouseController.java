@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.controller;
 
+import com.swp391.evdealersystem.dto.request.TransferStockRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseRequest;
 import com.swp391.evdealersystem.dto.request.WarehouseStockRequest;
 import com.swp391.evdealersystem.dto.response.WarehouseResponse;
@@ -59,4 +60,17 @@ public class WarehouseController {
                                                          @PathVariable String modelCode) {
         return ResponseEntity.ok(warehouseService.removeStock(id, modelCode));
     }
+
+    @PostMapping("/{sourceId}/transfer/{targetId}")
+    public ResponseEntity<WarehouseResponse> transferStock(
+            @PathVariable("sourceId") Long sourceWarehouseId,
+            @PathVariable("targetId") Long targetWarehouseId,
+            @Valid @RequestBody TransferStockRequest request) {
+
+        WarehouseResponse res = warehouseService.transferStock(
+                sourceWarehouseId, targetWarehouseId, request);
+
+        return ResponseEntity.ok(res);
+    }
+
 }

@@ -20,7 +20,6 @@ public class DealershipController {
 
     private final DealershipService dealershipService;
 
-    // CREATE
     @PostMapping
     public ResponseEntity<DealershipResponse> createDealership(@Valid @RequestBody DealershipRequest request) {
         DealershipResponse response = dealershipService.createDealership(request);
@@ -43,24 +42,32 @@ public class DealershipController {
         return ResponseEntity.ok(response);
     }
 
-    // READ (Get All)
     @GetMapping
     public ResponseEntity<List<DealershipResponse>> getAllDealerships() {
         List<DealershipResponse> responseList = dealershipService.getAllDealerships();
         return ResponseEntity.ok(responseList);
     }
 
-    @PostMapping("/{sourceId}/transfer-warehouses")
-    public ResponseEntity<String> transferWarehouses(
+    @PutMapping("/{sourceId}/transfer-warehouses")
+    public ResponseEntity<String> transferSelectedWarehouses(
             @PathVariable Long sourceId,
             @RequestBody TransferWarehouseRequest request) {
 
-        dealershipService.transferAllWarehouses(sourceId, request.getTargetDealershipId());
+        // Validate cơ bản nếu cần
+        if (request.getWarehouseIds() == null || request.getWarehouseIds().isEmpty()) {
+            return ResponseEntity.badRequest().body("Danh sách kho cần chuyển không được trống.");
+        }
 
-        return ResponseEntity.ok("Chuyển giao kho thành công!");
+        // 1. Gọi phương thức Service mới
+        dealershipService.transferSelectedWarehouses(
+                sourceId,
+                request.getTargetDealershipId(),
+                request.getWarehouseIds() // 2. Truyền thêm danh sách ID kho
+        );
+
+        return ResponseEntity.ok("Chuyển giao các kho được chọn thành công!");
     }
 
-    // UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<DealershipResponse> updateDealership(@PathVariable Long id, @Valid @RequestBody DealershipRequest request) {
         DealershipResponse response = dealershipService.updateDealership(id, request);

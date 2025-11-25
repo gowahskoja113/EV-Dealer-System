@@ -20,7 +20,7 @@ public class VinGenerator {
         };
     }
 
-    public String buildVin(int year,Long dealerShipId, long warehouseId, Long vehicleId, String colorLetter, int seqNo) {
-        return "VIN" + year + dealerShipId + warehouseId + vehicleId + colorLetter + String.format("%04d", seqNo);
+    public String buildVin(int year, Long dealerShipId, Long vehicleId, String colorLetter, int seqNo) {
+        return "VIN" + year + dealerShipId + vehicleId + colorLetter + String.format("%04d", seqNo);
     }
 }

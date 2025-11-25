@@ -39,7 +39,7 @@ public class OrderScheduledTasks {
 
             System.out.println("-> Đã lưu thành công " + ordersToComplete.size() + " đơn hàng.");
         } else {
-            System.out.println("-> Không có đơn hàng nào cần xử lý.");
+            System.out.println("-> khong co don hang nao can hoan thanh.");
         }
     }
 }
