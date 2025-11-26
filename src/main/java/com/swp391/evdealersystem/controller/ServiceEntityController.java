@@ -1,21 +1,20 @@
 package com.swp391.evdealersystem.controller;
 
-
 import com.swp391.evdealersystem.dto.request.ServiceRequest;
 import com.swp391.evdealersystem.dto.response.ServiceResponse;
 import com.swp391.evdealersystem.service.ServiceEntityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@EnableJpaAuditing
-@RequestMapping("/api/service-entitys")
+@RequestMapping("/api/service-entitys") // giữ nguyên path cũ cho khỏi vỡ FE/Postman
 public class ServiceEntityController {
 
     private final ServiceEntityService service;
@@ -48,4 +47,3 @@ public class ServiceEntityController {
         service.delete(id);
     }
 }
-

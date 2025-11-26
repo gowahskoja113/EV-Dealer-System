@@ -73,6 +73,3 @@ public class CustomerController {
         return customerService.getCustomerWithOrdersById(customerId);
     }
 }
-
-
-

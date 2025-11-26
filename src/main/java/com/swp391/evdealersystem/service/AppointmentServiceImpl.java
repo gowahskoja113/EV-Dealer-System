@@ -4,6 +4,7 @@ import com.swp391.evdealersystem.dto.request.AppointmentRequest;
 import com.swp391.evdealersystem.dto.request.UpdateAppointmentStatusRequest;
 import com.swp391.evdealersystem.entity.Appointment;
 import com.swp391.evdealersystem.entity.Customer;
+import com.swp391.evdealersystem.entity.ServiceEntity;
 import com.swp391.evdealersystem.entity.Slot;
 import com.swp391.evdealersystem.enums.ServiceType;
 import com.swp391.evdealersystem.mapper.AppointmentMapper;
@@ -27,25 +28,36 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 
     @Override
-    public Appointment createAppointment(Long customer, Long serviceId, LocalDateTime startAt, LocalDateTime endAt) {
-        Customer customers = new Customer();
+    public Appointment createAppointment(AppointmentRequest req) {
 
-        // Kiểm tra số lượng slot đã đạt giới hạn cho dịch vụ
-        if (!isSlotAvailable(serviceId, startAt, endAt)) {
-            throw new RuntimeException("Số lượng slot đã đầy trong khoảng thời gian này");
+        Slot slot = slotRepository.findById(req.getSlotId())
+                .orElseThrow(() -> new RuntimeException("Slot not found"));
+
+        // Dùng time của Slot
+        LocalDateTime startAt = slot.getStartTime();
+        LocalDateTime endAt = slot.getEndTime();
+
+        // Check slot full
+        if (!isSlotAvailable(req.getServiceId(), startAt, endAt)) {
+            throw new RuntimeException("Slot is full");
         }
 
-        // Kiểm tra xem khách hàng đã có lịch hẹn cho dịch vụ này trong slot này chưa
-        if (hasAppointmentForService(customer, serviceId, startAt, endAt)) {
-            throw new RuntimeException("Khách hàng đã có lịch hẹn cho dịch vụ này trong thời gian này");
+        // Check khách trùng schedule
+        if (hasAppointmentForService(req.getCustomerId(), req.getServiceId(), startAt, endAt)) {
+            throw new RuntimeException("Customer already has an appointment in this slot");
         }
 
-        // Tạo cuộc hẹn từ CreateAppointmentRequest và chuyển thành Appointment entity
-        Appointment appointment = appointmentMapper.toEntity(new AppointmentRequest());
+        // Map request -> Appointment
+        Appointment appointment = appointmentMapper.toEntity(req);
 
-        // Lưu cuộc hẹn vào cơ sở dữ liệu
+        // Gán Slot + time
+        appointment.setSlot(slot);
+        appointment.setStartAt(startAt);
+        appointment.setEndAt(endAt);
+
         return appointmentRepository.save(appointment);
     }
+
 
     @Override
     public boolean isSlotAvailable(Long serviceId, LocalDateTime startAt, LocalDateTime endAt) {

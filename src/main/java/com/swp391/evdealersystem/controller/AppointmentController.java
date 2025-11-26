@@ -23,10 +23,12 @@ public class AppointmentController {
 
     @PostMapping
     public AppointmentResponse create(@Valid @RequestBody AppointmentRequest req) {
-        Appointment appointment = service.createAppointment(req.customerId,req.serviceId,req.startAt,req.endAt);
-        return new AppointmentResponse(appointment.getAppointmentId(), appointment.getStatus());
+        Appointment appointment = service.createAppointment(req);
+        return new AppointmentResponse(
+                appointment.getAppointmentId(),
+                appointment.getStatus()
+        );
     }
-
     @PostMapping("/{id}/cancel")
     public void cancel(@PathVariable Long id) {
         service.cancelAppointment(id);

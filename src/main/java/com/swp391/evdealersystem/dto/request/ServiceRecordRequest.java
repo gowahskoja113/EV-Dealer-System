@@ -7,11 +7,15 @@ import lombok.Data;
 
 @Data
 public class ServiceRecordRequest {
-    @NotNull
-    private Long userId;
-    @NotNull private Long customerId;
-    @NotNull private Long serviceId;
+
+    @NotNull(message = "Appointment ID is required")
+    private Long appointmentId;
+
     @NotBlank
-    @Size(min=5, max=5000) private String content;
-    @Size(max=2000) private String note;
+    @Size(min = 5, max = 5000)
+    private String content;
+
+    @Size(max = 2000)
+    private String note;
 }
+

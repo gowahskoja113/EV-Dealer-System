@@ -1,5 +1,6 @@
 package com.swp391.evdealersystem.service;
 
+import com.swp391.evdealersystem.dto.request.AppointmentRequest;
 import com.swp391.evdealersystem.dto.request.UpdateAppointmentStatusRequest;
 import com.swp391.evdealersystem.entity.Appointment;
 import com.swp391.evdealersystem.entity.Customer;
@@ -11,7 +12,8 @@ import java.util.List;
 public interface AppointmentService {
 
     // Tạo cuộc hẹn
-    Appointment createAppointment(Long customer, Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
+    Appointment createAppointment(AppointmentRequest req);
+
 
     // Kiểm tra số lượng cuộc hẹn đã có trong cùng slot
     boolean isSlotAvailable(Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
