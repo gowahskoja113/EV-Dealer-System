@@ -77,29 +77,48 @@ public class Order {
             foreignKey = @ForeignKey(name = "fk_order_vehicle_serial"))
     private VehicleSerial serial;
 
+    // --- [ĐÃ SỬA] LOGIC ĐỒNG BỘ THỜI GIAN TỰ ĐỘNG ---
     @PrePersist
     void prePersist() {
-        // Chỉ set nếu chưa có (Service chưa set)
-        if (orderDate == null) orderDate = LocalDateTime.now();
-        if (updatedAt == null) updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-        // Default values
+        // 1. Set Order Date
+        if (orderDate == null) orderDate = now;
+        if (updatedAt == null) updatedAt = now;
+
+        // 2. Set Defaults
         if (currency == null)  currency = "VND";
         if (depositAmount == null) depositAmount = BigDecimal.ZERO;
         if (paymentStatus == null) paymentStatus = OrderPaymentStatus.UNPAID;
         if (status == null) status = OrderStatus.PROCESSING;
 
-        // Tính toán tiền
+        // 3. [QUAN TRỌNG] Đồng bộ ngày thanh toán với ngày tạo đơn (Nếu có)
+        if (paymentStatus == OrderPaymentStatus.DEPOSIT_PAID && depositPaidAt == null) {
+            depositPaidAt = orderDate; // Cọc ngay lúc tạo -> Ngày cọc = Ngày tạo
+        }
+        if (paymentStatus == OrderPaymentStatus.PAID) {
+            if (fullyPaidAt == null) fullyPaidAt = orderDate; // Mua đứt -> Ngày xong = Ngày tạo
+            if (depositPaidAt == null) depositPaidAt = orderDate;
+        }
+
+        // 4. Tính tiền
         calculateRemaining();
     }
 
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
+
+        if (paymentStatus == OrderPaymentStatus.PAID && fullyPaidAt == null) {
+            fullyPaidAt = updatedAt;
+        }
+
         calculateRemaining();
     }
 
     private void calculateRemaining() {
+        // Lưu ý: serial.getVehicle() có thể gây Lazy Loading exception nếu không fetch trước
+        // Nhưng logic này vẫn giữ nguyên để đảm bảo tính toán đúng khi có dữ liệu.
         BigDecimal price = (serial != null && serial.getVehicle() != null && serial.getVehicle().getPrice() != null)
                 ? serial.getVehicle().getPrice()
                 : BigDecimal.ZERO;

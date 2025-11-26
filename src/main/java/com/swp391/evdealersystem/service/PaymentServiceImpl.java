@@ -135,9 +135,20 @@ public class PaymentServiceImpl implements PaymentService {
         if (fullyPaid) {
             handleFullyPaid(order, serial);
         } else {
+            // Thanh toán 1 phần (Cọc)
             if (planned.signum() > 0 && newDeposit.compareTo(planned) >= 0) {
                 order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
                 if (order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
+
+                // --- [BỔ SUNG MỚI] GIA HẠN HOLD 14 NGÀY KỂ TỪ LÚC TRẢ CỌC ---
+                if (serial.getStatus() != VehicleStatus.SOLD_OUT && serial.getStatus() != VehicleStatus.UNDELIVERED) {
+                    // Đảm bảo trạng thái là HOLD
+                    serial.setStatus(VehicleStatus.HOLD);
+                    // Update thời gian: Now + 14 ngày
+                    serial.setHoldUntil(LocalDateTime.now().plusDays(14).atOffset(java.time.ZoneOffset.UTC));
+                    serialRepo.save(serial);
+                }
+
             } else {
                 order.setPaymentStatus(OrderPaymentStatus.UNPAID);
             }
@@ -215,10 +226,17 @@ public class PaymentServiceImpl implements PaymentService {
                 var planned = order.getPlannedDepositAmount();
                 if (planned != null && newDeposit.compareTo(planned) >= 0) {
                     order.setPaymentStatus(OrderPaymentStatus.DEPOSIT_PAID);
-                    if (order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
+                    if(order.getDepositPaidAt() == null) order.setDepositPaidAt(LocalDateTime.now());
+
+                    // --- [BỔ SUNG MỚI] GIA HẠN HOLD 14 NGÀY ---
+                    if (serial.getStatus() != VehicleStatus.SOLD_OUT && serial.getStatus() != VehicleStatus.UNDELIVERED) {
+                        serial.setStatus(VehicleStatus.HOLD);
+                        serial.setHoldUntil(LocalDateTime.now().plusDays(14).atOffset(java.time.ZoneOffset.UTC));
+                        serialRepo.save(serial);
+                    }
+                    // ------------------------------------------
                 }
                 orderRepo.save(order);
-
             } else if (payment.getType() == PaymentPurpose.REMAINING) {
                 if (serial != null && serial.getVehicle() != null) {
                     order.setDepositAmount(serial.getVehicle().getPrice());

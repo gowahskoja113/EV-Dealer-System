@@ -94,7 +94,6 @@ public class PdfGenerationServiceImpl implements PdfGenerationService {
         document.add(new Paragraph("Year: " + dto.getVehicleProductionYear()).setFont(font));
         document.add(new Paragraph("Color: " + dto.getVehicleColor()).setFont(font));
         document.add(new Paragraph("VIN (Vehicle Identification Number): " + dto.getVehicleVin()).setFont(fontBold));
-        document.add(new Paragraph("Deposited Amount: " + dto.getPlannedDepositAmount()).setFont(fontBold));
         document.add(new Paragraph("Deposited Amount: " + CURRENCY_FORMAT.format(dto.getPlannedDepositAmount())).setFont(fontBold));
         document.add(new Paragraph("Remaining Amount: " + CURRENCY_FORMAT.format(remainingBalance)).setFont(fontBold));
         document.add(new Paragraph("Total Price: " + CURRENCY_FORMAT.format(totalPrice)).setFont(fontBold));

@@ -7,58 +7,67 @@ import com.swp391.evdealersystem.enums.VehicleStatus;
 import com.swp391.evdealersystem.repository.OrderRepository;
 import com.swp391.evdealersystem.repository.VehicleSerialRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // Thêm cái này để log cho chuyên nghiệp
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OrderScheduledTasks {
 
     private final OrderRepository orderRepo;
     private final VehicleSerialRepository vehicleSerialRepo;
 
-    // "0 0 1 * * ?" (1h sáng). Hiện tại cron này đang chạy mỗi phút giây thứ 0
+    // Chạy định kỳ (Ví dụ: 1h sáng mỗi ngày, hoặc mỗi 30p tùy cấu hình)
+    // cron = "0 0 1 * * ?" -> 1h sáng
     @Scheduled(cron = "0 * * * * ?")
     @Transactional
     public void autoCompleteDeliveringOrders() {
         LocalDate today = LocalDate.now();
-        System.out.println("---- [SCHEDULER] dang quet don hang den han ngay giao: " + today + " ----");
+        log.info("---- [SCHEDULER] Bắt đầu quét đơn hàng ĐANG GIAO đến hạn: {} ----", today);
 
-        // Tìm các đơn đang giao (DELIVERING) mà ngày giao <= hôm nay
+        // 1. Tìm các đơn đang DELIVERING mà ngày giao <= hôm nay
         List<Order> ordersToComplete = orderRepo.findAllByStatusAndDeliveryDateLessThanEqual(
                 OrderStatus.DELIVERING,
                 today
         );
 
-        if (!ordersToComplete.isEmpty()) {
-            for (Order order : ordersToComplete) {
-                // 1. Update trạng thái đơn hàng -> COMPLETED
-                order.setStatus(OrderStatus.COMPLETED);
+        if (ordersToComplete.isEmpty()) {
+            log.info("-> Không có đơn hàng nào cần hoàn tất.");
+            return;
+        }
 
-                // 2. Update trạng thái xe -> DELIVERED
-                VehicleSerial serial = order.getSerial();
-                if (serial != null) {
-                    if (serial.getStatus() != VehicleStatus.DELIVERED) {
-                        serial.setStatus(VehicleStatus.DELIVERED);
-                        serial.setHoldUntil(null); // Clear hold cho chắc chắn
+        for (Order order : ordersToComplete) {
+            // A. Xử lý Xe trước (Xe phải giao xong thì đơn mới xong)
+            VehicleSerial serial = order.getSerial();
+            if (serial != null) {
+                // Chỉ update nếu xe chưa phải là DELIVERED
+                if (serial.getStatus() != VehicleStatus.DELIVERED) {
+                    serial.setStatus(VehicleStatus.DELIVERED);
+                    serial.setHoldUntil(null); // Xóa thời gian giữ xe
 
-                        vehicleSerialRepo.save(serial); // Lưu xe
-                        System.out.println("   -> Auto Update Vehicle VIN: " + serial.getVin() + " to DELIVERED");
-                    }
+                    vehicleSerialRepo.save(serial);
+                    log.info("   -> [AUTO] Vehicle VIN {} chuyển sang DELIVERED", serial.getVin());
                 }
-
-                System.out.println("-> Auto Complete Order ID: " + order.getOrderId());
             }
 
-            orderRepo.saveAll(ordersToComplete);
+            // B. Xử lý Đơn hàng
+            order.setStatus(OrderStatus.COMPLETED);
+            // Lưu ý: Không set lại fullyPaidAt vì nó đã được set lúc thanh toán rồi
+            // Chỉ cập nhật thời gian sửa đổi cuối cùng
+            order.setUpdatedAt(LocalDateTime.now());
 
-            System.out.println("-> Da luu thanh cong " + ordersToComplete.size() + " don hang va cap nhat trang thai xe.");
-        } else {
-            System.out.println("-> khong co don hang nao can hoan thanh.");
+            log.info("-> [AUTO] Order ID {} chuyển sang COMPLETED", order.getOrderId());
         }
+
+        // C. Lưu tất cả đơn hàng
+        orderRepo.saveAll(ordersToComplete);
+        log.info("-> Đã hoàn tất tự động {} đơn hàng.", ordersToComplete.size());
     }
 }
