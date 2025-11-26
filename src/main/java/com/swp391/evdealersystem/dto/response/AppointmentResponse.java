@@ -5,28 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 public class AppointmentResponse {
+
     private Long appointmentId;
+    private String customerName;
+    private String customerPhone;
+    private String serviceName;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
     private AppointmentStatus status;
-
-
-    public AppointmentStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(AppointmentStatus status) {
-        this.status = status;
-    }
-
-    public Long getAppointmentId() {
-        return appointmentId;
-    }
-
-    public void setAppointmentId(Long appointmentId) {
-        this.appointmentId = appointmentId;
-    }
 }
-

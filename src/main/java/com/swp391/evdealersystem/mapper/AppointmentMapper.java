@@ -42,11 +42,18 @@ public class AppointmentMapper {
         public AppointmentResponse toResponse(Appointment a) {
             if (a == null) return null;
 
-            AppointmentResponse res = new AppointmentResponse();
-            res.setAppointmentId(a.getAppointmentId());
-            res.setStatus(a.getStatus());
-            return res;
+            return new AppointmentResponse(
+                    a.getAppointmentId(),
+                    a.getCustomer().getName(),
+                    a.getCustomer().getPhoneNumber(),
+                    a.getService().getName(),
+                    a.getStartAt(),
+                    a.getEndAt(),
+                    a.getStatus()
+            );
         }
     }
+
+
 
 
