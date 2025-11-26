@@ -21,6 +21,7 @@ public class AppointmentController {
     private final AppointmentRepository repo;
 
 
+
     @PostMapping
     public AppointmentResponse create(@Valid @RequestBody AppointmentRequest req) {
         Appointment appointment = service.createAppointment(req);
@@ -64,7 +65,7 @@ public class AppointmentController {
     }
 
     @GetMapping
-    public List<Appointment> getAll() {
+    public List<AppointmentResponse> getAll() {
         return service.getAllAppointments();
     }
 }

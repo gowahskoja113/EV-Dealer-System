@@ -14,9 +14,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     long countAppointmentsInSlot(Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
 
     // Kiểm tra xem khách hàng đã có cuộc hẹn nào trong cùng slot và dịch vụ (lái thử)
-    boolean existsByCustomerCustomerIdAndServiceIdAndStartAtAndEndAt(
-            Long customerId, Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
+    boolean existsByCustomerCustomerIdAndService_IdAndSlot_SlotId(
+            Long customerId,
+            Long serviceId,
+            Long slotId
+    );
 
     List<Appointment> findByCustomerCustomerId(Long customerId);
+
+
 
 }

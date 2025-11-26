@@ -1,6 +1,7 @@
 package com.swp391.evdealersystem.mapper;
 
 import com.swp391.evdealersystem.dto.request.AppointmentRequest;
+import com.swp391.evdealersystem.dto.response.AppointmentResponse;
 import com.swp391.evdealersystem.entity.Appointment;
 import com.swp391.evdealersystem.repository.CustomerRepository;
 import com.swp391.evdealersystem.repository.SlotRepository;
@@ -37,5 +38,15 @@ public class AppointmentMapper {
         return appointment;
     }
 
-}
+
+        public AppointmentResponse toResponse(Appointment a) {
+            if (a == null) return null;
+
+            AppointmentResponse res = new AppointmentResponse();
+            res.setAppointmentId(a.getAppointmentId());
+            res.setStatus(a.getStatus());
+            return res;
+        }
+    }
+
 

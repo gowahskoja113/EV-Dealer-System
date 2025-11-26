@@ -2,9 +2,11 @@ package com.swp391.evdealersystem.service;
 
 import com.swp391.evdealersystem.dto.request.AppointmentRequest;
 import com.swp391.evdealersystem.dto.request.UpdateAppointmentStatusRequest;
+import com.swp391.evdealersystem.dto.response.AppointmentResponse;
 import com.swp391.evdealersystem.entity.Appointment;
 import com.swp391.evdealersystem.entity.Customer;
 import com.swp391.evdealersystem.entity.ServiceEntity;
+import com.swp391.evdealersystem.enums.ServiceType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,10 +18,12 @@ public interface AppointmentService {
 
 
     // Kiểm tra số lượng cuộc hẹn đã có trong cùng slot
-    boolean isSlotAvailable(Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
+    boolean isSlotAvailable(Long slotId, ServiceType serviceType);
 
-    // Kiểm tra xem khách hàng đã có lịch hẹn cho dịch vụ này trong slot này chưa
-    boolean hasAppointmentForService(Long customerId, Long serviceId, LocalDateTime startAt, LocalDateTime endAt);
+
+    // check coi ng dum co cuoc hen do chua
+    boolean hasAppointmentForService(Long customerId, Long serviceId, Long slotId);
+
 
     // CRUD các cuộc hẹn
     List<Appointment> getAppointmentsByCustomer(Long customerId);
@@ -32,5 +36,5 @@ public interface AppointmentService {
     void updateStatus(Long appointmentId, UpdateAppointmentStatusRequest req);
 
     //get all appointments
-    List<Appointment> getAllAppointments();
+    List<AppointmentResponse> getAllAppointments();
 }
