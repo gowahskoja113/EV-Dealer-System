@@ -23,14 +23,10 @@ public class AppointmentController {
 
     @PostMapping
     public AppointmentResponse create(@Valid @RequestBody AppointmentRequest req) {
-        // Gọi service để tạo cuộc hẹn và trả về AppointmentResponse
         Appointment appointment = service.createAppointment(req.customerId,req.serviceId,req.startAt,req.endAt);
         return new AppointmentResponse(appointment.getAppointmentId(), appointment.getStatus());
     }
 
-    /**
-     * Hủy lịch trước giờ hẹn → slot tự trả lại (COUNT không tính CANCELED)
-     */
     @PostMapping("/{id}/cancel")
     public void cancel(@PathVariable Long id) {
         service.cancelAppointment(id);

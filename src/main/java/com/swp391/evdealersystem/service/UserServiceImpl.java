@@ -54,7 +54,6 @@ public class UserServiceImpl implements UserService {
 
         User saved = userRepository.save(user);
 
-        // ================= GỬI MAIL THEO ROLE =================
         String roleName = saved.getRole() != null ? saved.getRole().getRoleName() : null;
 
         if ("ADMIN".equalsIgnoreCase(roleName)) {

@@ -3,6 +3,7 @@ package com.swp391.evdealersystem.service;
 import com.swp391.evdealersystem.dto.request.CashPaymentRequest;
 import com.swp391.evdealersystem.dto.request.StartVnpayRequest;
 import com.swp391.evdealersystem.dto.response.OrderResponse;
+import com.swp391.evdealersystem.dto.response.PaymentHistoryResponse;
 import com.swp391.evdealersystem.dto.response.StartVnpayResponse;
 import com.swp391.evdealersystem.dto.response.VnpIpnResponse;
 import com.swp391.evdealersystem.entity.*;
@@ -12,11 +13,14 @@ import com.swp391.evdealersystem.repository.*;
 import com.swp391.evdealersystem.util.AuthenticationHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -228,5 +232,39 @@ public class PaymentServiceImpl implements PaymentService {
             paymentRepo.save(payment);
             return VnpIpnResponse.fail("24", "Failed");
         }
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentHistoryResponse> getPayments(Long customerId, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
+        User currentUser = authenticationHelper.getCurrentUser();
+        Long dealershipId = null;
+
+        if (!"ROLE_ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+            if (currentUser.getDealership() == null) {
+                throw new AccessDeniedException("Nhân viên không thuộc đại lý nào.");
+            }
+            dealershipId = currentUser.getDealership().getDealershipId();
+        }
+
+        // Xử lý ngày tháng (chuyển LocalDate sang LocalDateTime đầu ngày và cuối ngày)
+        LocalDateTime fromDateTime = (fromDate != null) ? fromDate.atStartOfDay() : null;
+        LocalDateTime toDateTime = (toDate != null) ? toDate.atTime(23, 59, 59) : null;
+
+        Page<Payment> payments = paymentRepo.searchPayments(dealershipId, customerId, fromDateTime, toDateTime, pageable);
+
+        // Map Entity sang DTO
+        return payments.map(p -> PaymentHistoryResponse.builder()
+                .paymentId(p.getId())
+                .orderId(p.getOrder().getOrderId())
+                .customerName(p.getOrder().getCustomer() != null ? p.getOrder().getCustomer().getName() : "N/A")
+                .customerId(p.getOrder().getCustomer() != null ? p.getOrder().getCustomer().getCustomerId() : null)
+                .amount(p.getAmount())
+                .status(p.getStatus())
+                .type(p.getType())
+                .method(p.getMethod())
+                .transactionRef(p.getTransactionRef())
+                .paymentDate(p.getPaymentDate())
+                .message(p.getMessage())
+                .build());
     }
 }
