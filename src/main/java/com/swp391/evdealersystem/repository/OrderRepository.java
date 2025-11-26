@@ -61,4 +61,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByStatusAndDeliveryDateLessThanEqual(OrderStatus status, LocalDate date);
 
+
+    @EntityGraph(attributePaths = {"customer", "serial", "serial.vehicle", "serial.vehicle.model"})
+    @Query("SELECT o FROM Order o WHERE o.serial.warehouse.dealership.dealershipId = :dealershipId")
+    List<Order> findAllByDealershipId(@Param("dealershipId") Long dealershipId);
 }

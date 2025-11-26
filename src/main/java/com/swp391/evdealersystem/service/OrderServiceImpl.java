@@ -188,7 +188,25 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @Override
     public List<OrderResponse> getAll() {
-        return orderRepo.findAll().stream()
+        // 1. Lấy user hiện tại đang đăng nhập
+        User currentUser = authenticationHelper.getCurrentUser();
+
+        // 2. Nếu là ADMIN -> Cho xem tất cả (giữ nguyên logic cũ)
+        if ("ROLE_ADMIN".equals(currentUser.getRole().getRoleName())) {
+            return orderRepo.findAll().stream()
+                    .map(mapper::toOrderResponse)
+                    .collect(Collectors.toList());
+        }
+
+        // 3. Nếu không phải Admin (Sale, Manager...) -> Phải thuộc một Dealership
+        if (currentUser.getDealership() == null) {
+            throw new AccessDeniedException("Nhân viên chưa thuộc Đại lý nào, không thể xem danh sách đơn hàng.");
+        }
+
+        // 4. Lấy ID Dealer của nhân viên và chỉ query đơn hàng thuộc Dealer đó
+        Long dealerId = currentUser.getDealership().getDealershipId();
+
+        return orderRepo.findAllByDealershipId(dealerId).stream()
                 .map(mapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
